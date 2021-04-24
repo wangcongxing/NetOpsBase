@@ -67,30 +67,12 @@ docker run -p 9080:80 wangcongxing/netops
 ## 常见问题:
 
 
-
-## 赞助💰
-如果你觉得NetOps对你有帮助，你可以赞助我们一杯咖啡，鼓励我们继续开发维护下去。
-![扫码赞助](https://github.com/#.png)
-
-
 # 登录页
 ![](https://github.com/#.png)
 
 # 主页
 ![](https://github.com/#.png)
 
-# 列表页
-![](https://github.com/#.png)
-![](https://github.com/#.png)
-
-# 切换主题
-![](https://github.com/#.png)
-
-# 密码修改
-![](https://github.com/#.png)
-
-# 编辑页
-![](https://github.com/#.png)
 
 
 
