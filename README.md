@@ -17,6 +17,7 @@
 
 ## NetOps 特点
 文档详细的描述了安装使用方法，以及各种配置项的说明，请点击以下链接查阅。
+
 👍 支持所有常见网络设备（思科，H3C，华为等）
 
 ⚡️ 闪电完成日常网络设备维护工作
@@ -64,19 +65,6 @@ docker run -p 9080:80 wangcongxing/netops
 
 
 ## 常见问题:
-
-1. 如果关闭debug模式后，请执行以下命令将simpleui静态文件静态文件克隆到根目录
-    ```shell
-    python3 manage.py collectstatic
-    ```
-2. 克隆静态文件出错
-请在settings.py文件中加入：
-    ```shell
-    STATIC_ROOT = os.path.join(BASE_DIR, "static")
-    ```
-3. 其他问题请参考[django官方文档](https://docs.djangoproject.com/zh-hans/2.2/)。
-
-4. i18n 国际化 采用js国际化，默认为英文和中文两种语言，随系统切换。具体请看[国际化配置](/i18n.md)
 
 
 
