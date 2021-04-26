@@ -73,6 +73,9 @@ docker run -p 9080:80 wangcongxing/netops
 ## 常见问题:
 
 
+# 项目架构
+![](https://github.com/wangcongxing/NetOpsBase/blob/main/images/netops.png)
+
 # 登录页
 ![](https://github.com/#.png)
 
