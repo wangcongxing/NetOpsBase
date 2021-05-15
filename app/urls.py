@@ -12,7 +12,6 @@ router.register(r'group', views.GroupViewSet)
 router.register(r'user', views.UserViewSet)
 
 urlpatterns = [
-
     # 获取token
     path('getAuthToken', views.LoginJWTAPIView.as_view()),
     path('checkAuthUser', views.CheckAuthUserAPIView.as_view()),

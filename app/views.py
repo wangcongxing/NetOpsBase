@@ -31,7 +31,6 @@ else:
     from NetOpsBase import settings as config
 
 
-
 class LoginJWTAPIView(APIView):
     authentication_classes = ()
     permission_classes = ()
@@ -244,22 +243,10 @@ class MenuViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data,
                                              http_status=status.HTTP_200_OK, )
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        with transaction.atomic():
-            try:
-                instance.permission.clear()
-                instance.group.clear()
-                self.perform_destroy(instance)
-            except Exception as ex:
-                transaction.rollback()
-                raise ex
-        return APIResponseResult.APIResponse(0, 'delete resource success', results=[],
-                                             http_status=status.HTTP_200_OK, )
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        title = request.data.get("title",None)
+        title = request.data.get("title", None)
         if title and title != "":
             queryset = queryset.filter(title__contains=title)
         page = self.paginate_queryset(queryset)
@@ -269,7 +256,6 @@ class MenuViewSet(CustomViewBase):
 
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-
 
 
 # 系统ContentType管理
@@ -305,7 +291,7 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 
 class PermissionViewSet(CustomViewBase):
-    queryset = Permission.objects.filter(id__gt=36).order_by('-id')
+    queryset = Permission.objects.filter(id__gt=28).order_by('-id')
     serializer_class = PermissionSerializer
 
     def update(self, request, *args, **kwargs):
@@ -330,7 +316,7 @@ class PermissionViewSet(CustomViewBase):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        name = request.data.get("name",None)
+        name = request.data.get("name", None)
         if name and name != "":
             queryset = queryset.filter(name__contains=name)
         page = self.paginate_queryset(queryset)
@@ -341,7 +327,6 @@ class PermissionViewSet(CustomViewBase):
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
-
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         with transaction.atomic():
@@ -351,7 +336,7 @@ class PermissionViewSet(CustomViewBase):
             except Exception as ex:
                 transaction.rollback()
                 raise ex
-        return APIResponseResult.APIResponse(0, 'delete resource success', results=[],
+        return APIResponseResult.APIResponse(0, 'success',
                                              http_status=status.HTTP_200_OK, )
 
 
@@ -409,7 +394,7 @@ class GroupViewSet(CustomViewBase):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        name = request.data.get("name",None)
+        name = request.data.get("name", None)
         if name and name != "":
             queryset = queryset.filter(name__contains=name)
         page = self.paginate_queryset(queryset)
@@ -420,21 +405,18 @@ class GroupViewSet(CustomViewBase):
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
+
 # 系统权限菜单管理
 class UserSerializer(serializers.ModelSerializer):
-    uname = serializers.SerializerMethodField()
-
-    def get_uname(self, obj):
-        return obj.first_name + obj.last_name
 
     def create(self, validated_data):
         password = self.initial_data["password"]
-        if "valid" in self.initial_data:
-            validated_data.update({"is_staff": True})
-        if "userstate" in self.initial_data:
-            validated_data.update({"is_active": True})
-        if "superuser" in self.initial_data:
-            validated_data.update({"is_superuser": True})
+        if "is_staff" in self.initial_data:
+            validated_data.update({"is_staff": self.initial_data["is_staff"]})
+        if "is_active" in self.initial_data:
+            validated_data.update({"is_active": self.initial_data["is_active"]})
+        if "is_superuser" in self.initial_data:
+            validated_data.update({"is_superuser": self.initial_data["is_superuser"]})
         # 随机密码 仅用于ad域认证
         if "password" in self.initial_data:
 
@@ -460,7 +442,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["username", "uname","first_name", "email", "groups", "user_permissions", "is_staff", "is_active",
+        fields = ["id","username", "first_name", "last_name", "email", "groups", "user_permissions", "is_staff", "is_active",
                   "is_superuser", "date_joined", "last_login"]
         depth = 3
 
@@ -468,9 +450,10 @@ class UserSerializer(serializers.ModelSerializer):
 class UserViewSet(CustomViewBase):
     queryset = User.objects.all().order_by('-username')
     serializer_class = UserSerializer
+
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        instance = User.objects.filter(username=request.data["username"]).first() # self.get_object()
+        instance = User.objects.filter(username=request.data["username"]).first()  # self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         res = serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -495,27 +478,15 @@ class UserViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data,
                                              http_status=status.HTTP_200_OK, )
 
-    def destroy(self, request, *args, **kwargs):
-        instance = User.objects.filter(username=request.data["username"]).first() # self.get_object()
-        with transaction.atomic():
-            try:
-                instance.user_permissions.clear()
-                instance.groups.clear()
-                self.perform_destroy(instance)
-            except Exception as ex:
-                transaction.rollback()
-                raise ex
-        return APIResponseResult.APIResponse(0, 'delete resource success', results=[],
-                                             http_status=status.HTTP_200_OK, )
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        username = request.data.get("username",None)
+        username = request.data.get("username", None)
         if username and username != "":
             queryset = queryset.filter(username__contains=username)
 
         first_name = request.data.get("first_name", None)
-        if first_name and first_name != "":
+        if first_name:
             queryset = queryset.filter(first_name__contains=first_name)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -524,4 +495,3 @@ class UserViewSet(CustomViewBase):
 
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-

@@ -44,11 +44,11 @@
 
 👇👇👇👇👇👇👇👇👇👇👇
 
-👉 1.[NetOps接口文档说明](https://www.NetOps.com/docs/index.html) 👈
+👉 1.[NetOps接口文档说明](http://3m7653694r.qicp.vip/start/index.html) 👈
 
-👉 2.[NetOps接口文档说明](https://www.NetOps.com/docs/index.html)👈
+👉 2.[NetOps接口文档说明](http://3m7653694r.qicp.vip/start/index.html)👈
 
-👉 3.[NetOps接口文档说明](https://www.NetOps.com/docs/index.html)👈
+👉 3.[NetOps接口文档说明](http://3m7653694r.qicp.vip/start/index.html)👈
 
 👆👆👆👆👆👆👆👆👆👆👆
 
@@ -71,7 +71,9 @@ docker run -p 9080:80 wangcongxing/netops
 
 
 ## 常见问题:
-整理中
+1.前端为什么不适用react或vue？
+答：因考虑到大部分网工没有专业的前端知识，所有采用layui框架，原生∂的div html css 结构，相对容易上手
+
 
 # 项目架构
 ![](https://github.com/wangcongxing/NetOpsBase/blob/main/images/netops.png)

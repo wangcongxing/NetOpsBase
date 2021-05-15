@@ -17,12 +17,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 class CustomViewBase(viewsets.ModelViewSet):
     # pagination_class = LargeResultsSetPagination
     # filter_class = ServerFilter
-    queryset = ''
-    serializer_class = ''
-    permission_classes = ()
-    filter_fields = ()
-    search_fields = ()
-    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter,)
+    #queryset = ''
+    #serializer_class = ''
+    #permission_classes = ()
+    #filter_fields = ()
+    #search_fields = ()
+    #filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter,)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -68,5 +68,5 @@ class CustomViewBase(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
-        return APIResponseResult.APIResponse(0, 'delete resource success', results=[],
+        return APIResponseResult.APIResponse(0, 'success',
                                              http_status=status.HTTP_200_OK, )
