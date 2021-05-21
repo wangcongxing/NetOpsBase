@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'app.apps.AppConfig',
     'rest_framework',
     'django_celery_beat',  #安装 django_celery_beat
-    'celery_tasks',
 ]
 
 MIDDLEWARE = [
@@ -114,7 +113,7 @@ LANGUAGE_CODE = 'zh-hans'  # 使用中国语言
 TIME_ZONE = 'Asia/Shanghai'  # 设置Django使用中国上海时间
 # 如果USE_TZ设置为True时，Django会使用系统默认设置的时区，此时的TIME_ZONE不管有没有设置都不起作用
 # 如果USE_TZ 设置为False,TIME_ZONE = 'Asia/Shanghai', 则使用上海的UTC时间。
-USE_TZ = False
+USE_TZ = True
 
 
 USE_I18N = True  # 默认为True，是否启用自动翻译系统

@@ -508,12 +508,12 @@ def tc(request):
     schedule, created = IntervalSchedule.objects.get_or_create(every=10, period=IntervalSchedule.SECONDS)
 
     print("schedule={},created={}", schedule, created)
-    result = IntervalSchedule.objects.all()
+    result = IntervalSchedule.objects.all().values()
     print("result=", result)
     # 上面创建10秒的间隔 interval 对象
-
-    PeriodicTask.objects.create(interval=schedule,
-                                name='my_task2',
+    '''
+        PeriodicTask.objects.create(interval=schedule,
+                                name='my_task2xxx1',
                                 task='celery_tasks.tasks.my_task2',
                                 expires=datetime.now() + timedelta(
                                     seconds=30)
@@ -521,12 +521,16 @@ def tc(request):
 
 
 
-    PeriodicTask.objects.create(interval=schedule, name='my_task1',
+    PeriodicTask.objects.create(interval=schedule, name='my_task1xxx1',
                                 task='celery_tasks.tasks.my_task1',
                                 args=json.dumps([10, 20, 30]),
                                 expires=datetime.now() + timedelta(
                                     seconds=30)
                                 )
+    '''
+
+
+
     return JsonResponse({"result": list(result)})
 
 
