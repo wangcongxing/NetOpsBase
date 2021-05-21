@@ -12,9 +12,9 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import datetime
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -27,7 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app.apps.AppConfig',
-    'rest_framework'
+    'rest_framework',
+    'django_celery_beat',  #安装 django_celery_beat
+    'celery_tasks',
 ]
 
 MIDDLEWARE = [
@@ -72,7 +73,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'NetOpsBase.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
@@ -82,7 +82,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -102,29 +101,29 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'zh-hans'  # 设置为中文
-TIME_ZONE = 'Asia/Shanghai'  # 设置时区
+# Django设置时区
+LANGUAGE_CODE = 'zh-hans'  # 使用中国语言
+TIME_ZONE = 'Asia/Shanghai'  # 设置Django使用中国上海时间
+# 如果USE_TZ设置为True时，Django会使用系统默认设置的时区，此时的TIME_ZONE不管有没有设置都不起作用
+# 如果USE_TZ 设置为False,TIME_ZONE = 'Asia/Shanghai', 则使用上海的UTC时间。
+USE_TZ = False
+
+
 USE_I18N = True  # 默认为True，是否启用自动翻译系统
 USE_L10N = True  # 默认False，以本地化格式显示数字和时间
-USE_TZ = False  # 默认值True。若使用了本地时间，必须设为False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
 
 wwopeninit = {
     "suite_id": "ww2204b8d0daa1fb88",
@@ -203,4 +202,3 @@ JWT_AUTH = {
     'JWT_AUTH_HEADER_PREFIX': 'JWT',
     'JWT_AUTH_COOKIE': None,
 }
-

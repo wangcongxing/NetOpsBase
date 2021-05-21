@@ -17,6 +17,8 @@ from rest_framework.views import APIView
 import os, uuid
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.hashers import make_password
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
+
 # Create your views here.
 
 
@@ -243,7 +245,6 @@ class MenuViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data,
                                              http_status=status.HTTP_200_OK, )
 
-
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         title = request.data.get("title", None)
@@ -442,7 +443,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id","username", "first_name", "last_name", "email", "groups", "user_permissions", "is_staff", "is_active",
+        fields = ["id", "username", "first_name", "last_name", "email", "groups", "user_permissions", "is_staff",
+                  "is_active",
                   "is_superuser", "date_joined", "last_login"]
         depth = 3
 
@@ -478,7 +480,6 @@ class UserViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data,
                                              http_status=status.HTTP_200_OK, )
 
-
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         username = request.data.get("username", None)
@@ -495,3 +496,37 @@ class UserViewSet(CustomViewBase):
 
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
+
+
+# 定时任务
+from django_celery_beat.models import PeriodicTask, IntervalSchedule
+import json
+from datetime import datetime, timedelta
+
+
+def tc(request):
+    schedule, created = IntervalSchedule.objects.get_or_create(every=10, period=IntervalSchedule.SECONDS)
+
+    print("schedule={},created={}", schedule, created)
+    result = IntervalSchedule.objects.all()
+    print("result=", result)
+    # 上面创建10秒的间隔 interval 对象
+
+    PeriodicTask.objects.create(interval=schedule,
+                                name='my_task2',
+                                task='celery_tasks.tasks.my_task2',
+                                expires=datetime.now() + timedelta(
+                                    seconds=30)
+                                )
+
+
+
+    PeriodicTask.objects.create(interval=schedule, name='my_task1',
+                                task='celery_tasks.tasks.my_task1',
+                                args=json.dumps([10, 20, 30]),
+                                expires=datetime.now() + timedelta(
+                                    seconds=30)
+                                )
+    return JsonResponse({"result": list(result)})
+
+
