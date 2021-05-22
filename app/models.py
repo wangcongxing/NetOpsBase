@@ -1,7 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User, Group, Permission
 from mptt.models import MPTTModel
-import datetime
+import datetime, uuid
+
+
+# 自动生成guid
+def newuuid():
+    return str(uuid.uuid4())
 
 
 # Create your models here.
@@ -9,7 +14,8 @@ class Menu(MPTTModel):
     """
     一级菜单表
     """
-    title = models.CharField(verbose_name='菜单名称', max_length=32)
+    title = models.CharField(verbose_name='菜单名称', max_length=255, default="", null=True,
+                             blank=True, )
     name = models.CharField(verbose_name='URL别名', max_length=255, unique=True, default="", null=True,
                             blank=True, )  # unique唯一
     url = models.CharField(verbose_name='含正则的URL', max_length=128, default="", null=True,
@@ -36,3 +42,24 @@ class Menu(MPTTModel):
 
     class Meta:
         verbose_name = verbose_name_plural = '菜单表'
+
+
+# 调度任务扩展表 可支持动态配置url执行定时任务
+
+class celeryExtend(models.Model):
+    nid = models.CharField(max_length=255, verbose_name="任务id", blank=False, null=False, default=newuuid)
+    url = models.URLField(verbose_name='URL地址', max_length=255, unique=True, default="", null=True,
+                          blank=True, )
+    method = models.CharField(verbose_name='请求方式', max_length=255, default="", null=True,
+                              blank=True, )
+    headers = models.TextField(verbose_name='请求头', max_length=50000, default="", null=True,
+                               blank=True, )
+    payload = models.TextField(verbose_name='请求体', max_length=50000, default="", null=True,
+                               blank=True, )
+    createTime = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    lastTime = models.DateTimeField(auto_now=True, verbose_name="修改时间")
+    creator = models.CharField(max_length=255, verbose_name="创建者", blank=True, null=True, default="")
+    editor = models.CharField(max_length=255, verbose_name="修改者", blank=True, null=True, default="")
+
+    class Meta:
+        verbose_name = verbose_name_plural = '用于支持定时调用URL任务'

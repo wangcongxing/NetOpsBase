@@ -18,7 +18,10 @@ import os, uuid
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.hashers import make_password
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
-
+# 定时任务
+from django_celery_beat.models import PeriodicTask, IntervalSchedule
+import json
+from datetime import datetime, timedelta
 # Create your views here.
 
 
@@ -50,6 +53,9 @@ class LoginJWTAPIView(APIView):
         # 获得用户后，校验密码并签发token
         if not user.check_password(password):
             return APIResponseResult.APIResponse(-3, '密码错误')
+        # 更新最后一次登录时间
+        user.last_login = datetime.now()
+        user.save()
         jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
         jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
         payload = jwt_payload_handler(user)
@@ -499,9 +505,16 @@ class UserViewSet(CustomViewBase):
 
 
 # 定时任务
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
-import json
-from datetime import datetime, timedelta
+class PeriodicTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PeriodicTask
+        fields = '__all__'
+        #depth = 3
+
+
+class PeriodicTaskViewSet(CustomViewBase):
+    queryset = PeriodicTask.objects.all().order_by('-id')
+    serializer_class = PeriodicTaskSerializer
 
 
 def tc(request):
@@ -529,8 +542,4 @@ def tc(request):
                                 )
     '''
 
-
-
     return JsonResponse({"result": list(result)})
-
-

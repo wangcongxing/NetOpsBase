@@ -10,7 +10,7 @@ router.register(r'contenttype', views.ContentTypeViewSet)
 router.register(r'permission', views.PermissionViewSet)
 router.register(r'group', views.GroupViewSet)
 router.register(r'user', views.UserViewSet)
-
+router.register(r'PeriodicTask', views.PeriodicTaskViewSet)
 
 
 
