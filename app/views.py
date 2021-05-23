@@ -14,7 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from rest_framework.views import APIView
-import os, uuid
+import os, uuid, time
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.hashers import make_password
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
@@ -22,6 +22,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 import json
 from datetime import datetime, timedelta
+from django.db import transaction
 # Create your views here.
 
 
@@ -504,12 +505,89 @@ class UserViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
 
-# 定时任务
+# 定时任务时间参数 主要用于验证前端传到后台的数据是否合法
+IntervalScheduleDict = {"DAYS": [IntervalSchedule.DAYS, "天"],
+                        "HOURS": [IntervalSchedule.HOURS, "时"],
+                        "MINUTES": [IntervalSchedule.MINUTES, "分"],
+                        "SECONDS": [IntervalSchedule.SECONDS, "秒"],
+                        "MICROSECONDS": [IntervalSchedule.MICROSECONDS, "微秒"], }
+
+
 class PeriodicTaskSerializer(serializers.ModelSerializer):
+    intervalshow = serializers.SerializerMethodField()
+    intervaldict = serializers.SerializerMethodField()
+    celeryextend = serializers.SerializerMethodField()
+
+    def get_intervalshow(self, obj):
+        if obj.interval:
+            return "每{}{}运行/次".format(str(obj.interval.every),
+                                      IntervalScheduleDict[str(obj.interval.period).upper()][1])
+        else:
+            return "空"
+
+    def get_intervaldict(self, obj):
+        if obj.interval:
+            return [obj.interval.every, obj.interval.period]
+        else:
+            return []
+
+    def get_celeryextend(self, obj):
+        return models.celeryExtend.objects.filter(periodictask=obj).values()
+
+    def create(self, validated_data):
+        username = self.context["request"].user["username"]
+        name = str(self.initial_data.get("name", "")).strip()
+        tasktype = str(self.initial_data.get("tasktype", "")).strip()
+        task = str(self.initial_data.get("task", "")).strip()
+        intervalType = str(self.initial_data.get("intervalType", "")).strip()
+        args = str(self.initial_data.get("args", "")).strip()
+        kwargs = str(self.initial_data.get("kwargs", "")).strip()
+        url = str(self.initial_data.get("url", "")).strip()
+        reqmethod = str(self.initial_data.get("reqmethod", "")).strip()
+        headers = str(self.initial_data.get("headers", "")).strip()
+        payload = str(self.initial_data.get("payload", "")).strip()
+        runtime = int(str(self.initial_data.get("runtime", "")).strip())
+        start_time = str(self.initial_data.get("start_time", "")).strip()
+        expires = str(self.initial_data.get("expires", "")).strip()
+        phone = str(self.initial_data.get("phone", "")).strip()
+        email = str(self.initial_data.get("email", "")).strip()
+        description = str(self.initial_data.get("description", "")).strip()
+        if intervalType not in IntervalScheduleDict:
+            print("intervalType=", intervalType)
+            pass
+        print("intervalType 0",IntervalScheduleDict[intervalType][0])
+        intervalschedule = IntervalSchedule.objects.create(every=runtime, period=IntervalScheduleDict[intervalType][0])
+        taskState = PeriodicTask.objects.filter(name=name).count()
+        if taskState == 0:
+            name = name + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        with transaction.atomic():
+            periodictask = PeriodicTask.objects.create(interval=intervalschedule, name=name,
+                                                       task=task,
+                                                       args=json.dumps(args),
+                                                       kwargs=json.dumps(kwargs),
+                                                       start_time=start_time,
+                                                       expires=expires,
+                                                       description=description)
+            # 新增扩展类数据
+            celeryextend = models.celeryExtend.objects.create(periodictask=periodictask, tasktype=tasktype, url=url, method=reqmethod,
+                                               headers=headers,
+                                               payload=payload, phone=phone, email=email, creator=username,
+                                               editor=username)
+            if tasktype == "1":
+                periodictask.args = json.dumps(celeryextend.nid)
+                periodictask.save()
+
+        print("periodictask={}".format(periodictask))
+        return periodictask
+
     class Meta:
+
         model = PeriodicTask
-        fields = '__all__'
-        #depth = 3
+        fields = ["id", "name", "task", "args", "kwargs", "queue", "exchange", "routing_key",
+                  "headers", "priority", "expires", "expire_seconds", "one_off", "start_time",
+                  "enabled", "last_run_at", "total_run_count", "date_changed", "description", "interval",
+                  "intervalshow","intervaldict", "celeryextend", "crontab", "solar", "clocked"]
+        # depth = 3
 
 
 class PeriodicTaskViewSet(CustomViewBase):
@@ -525,7 +603,7 @@ def tc(request):
     print("result=", result)
     # 上面创建10秒的间隔 interval 对象
     '''
-        PeriodicTask.objects.create(interval=schedule,
+    PeriodicTask.objects.create(interval=schedule,
                                 name='my_task2xxx1',
                                 task='celery_tasks.tasks.my_task2',
                                 expires=datetime.now() + timedelta(
@@ -540,6 +618,6 @@ def tc(request):
                                 expires=datetime.now() + timedelta(
                                     seconds=30)
                                 )
-    '''
 
+    '''
     return JsonResponse({"result": list(result)})

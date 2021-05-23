@@ -3,6 +3,8 @@ from django.contrib.auth.models import User, Group, Permission
 from mptt.models import MPTTModel
 import datetime, uuid
 
+from django_celery_beat.models import PeriodicTask, IntervalSchedule
+
 
 # 自动生成guid
 def newuuid():
@@ -47,8 +49,13 @@ class Menu(MPTTModel):
 # 调度任务扩展表 可支持动态配置url执行定时任务
 
 class celeryExtend(models.Model):
+    periodictask = models.ForeignKey(PeriodicTask, verbose_name='周期性任务', help_text='celery-PeriodicTask', null=True,
+                                     blank=True,
+                                     on_delete=models.CASCADE)
+    tasktype = models.CharField(verbose_name='任务类型', max_length=255, default="", null=True,
+                          blank=True, )
     nid = models.CharField(max_length=255, verbose_name="任务id", blank=False, null=False, default=newuuid)
-    url = models.URLField(verbose_name='URL地址', max_length=255, unique=True, default="", null=True,
+    url = models.URLField(verbose_name='URL地址', max_length=255, default="", null=True,
                           blank=True, )
     method = models.CharField(verbose_name='请求方式', max_length=255, default="", null=True,
                               blank=True, )
@@ -56,6 +63,10 @@ class celeryExtend(models.Model):
                                blank=True, )
     payload = models.TextField(verbose_name='请求体', max_length=50000, default="", null=True,
                                blank=True, )
+    phone = models.CharField(verbose_name='手机号码', max_length=255, default="", null=True,
+                             blank=True, )
+    email = models.CharField(verbose_name='邮箱', max_length=255, default="", null=True,
+                             blank=True, )
     createTime = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     lastTime = models.DateTimeField(auto_now=True, verbose_name="修改时间")
     creator = models.CharField(max_length=255, verbose_name="创建者", blank=True, null=True, default="")

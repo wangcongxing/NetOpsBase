@@ -9,7 +9,7 @@ from celery import shared_task
 # celery -A NetOpsBase beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler -f logs/celerybeat_out.log
 
 # celery -A NetOpsBase worker -l info # 不带日志启动
-# celery -A NetOpsBase worker --pool=solo -l info -f ../logs/celery.log # 带日志启动
+# celery -A NetOpsBase worker --pool=solo -l info -f logs/celery.log # 带日志启动
 from celery_tasks.celeryapp import app
 import time
 import requests
@@ -34,10 +34,26 @@ def my_task2():
 
 @app.task
 def sendUrl(nid):
+    print("nid=", nid)
+    '''
+
     celeryextend = appModel.celeryExtend.objects.filter(nid=nid).first()
     if celeryextend is None:
         return "nid={},未找到需要请求的url,请求失败...".format(nid)
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    '''
+    url = "http://127.0.0.1:7000/opsbase/app/menu/?access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwiZXhwIjoxNjIyMjEyOTk4LCJlbWFpbCI6IiJ9.vDJPoy8JKwI6BEeIYdo85pjkFnOWhjyCzQ5mVVywZxQ"
 
-    response = requests.request(celeryextend.method, celeryextend.url, headers=celeryextend.headers,
-                                data=celeryextend.payload)
-    return response.text
+    payload = {}
+    headers = {}
+    proxies = {
+        "http": None,
+        "https": None,
+    }
+
+    response = requests.get(url, proxies=proxies)
+
+    print(response.text)
+    return response.text  # response.text
