@@ -564,7 +564,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
             periodictask = PeriodicTask.objects.create(interval=intervalschedule, name=name,
                                                        task=task,
                                                        args=json.dumps(args),
-                                                       kwargs=json.dumps(kwargs),
+                                                       kwargs=json.dumps({}),
                                                        start_time=start_time,
                                                        expires=expires,
                                                        description=description)
@@ -574,7 +574,9 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
                                                payload=payload, phone=phone, email=email, creator=username,
                                                editor=username)
             if tasktype == "1":
-                periodictask.args = json.dumps(celeryextend.nid)
+                resultArgs = []
+                resultArgs.append(celeryextend.nid)
+                periodictask.args = json.dumps(resultArgs)
                 periodictask.save()
 
         print("periodictask={}".format(periodictask))
@@ -602,7 +604,7 @@ def tc(request):
     result = IntervalSchedule.objects.all().values()
     print("result=", result)
     # 上面创建10秒的间隔 interval 对象
-    '''
+
     PeriodicTask.objects.create(interval=schedule,
                                 name='my_task2xxx1',
                                 task='celery_tasks.tasks.my_task2',
@@ -619,5 +621,5 @@ def tc(request):
                                     seconds=30)
                                 )
 
-    '''
+
     return JsonResponse({"result": list(result)})
