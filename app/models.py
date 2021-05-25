@@ -53,7 +53,7 @@ class celeryExtend(models.Model):
                                      blank=True,
                                      on_delete=models.CASCADE)
     tasktype = models.CharField(verbose_name='任务类型', max_length=255, default="", null=True,
-                          blank=True, )
+                                blank=True, )
     nid = models.CharField(max_length=255, verbose_name="任务id", blank=False, null=False, default=newuuid)
     url = models.URLField(verbose_name='URL地址', max_length=255, default="", null=True,
                           blank=True, )
@@ -74,3 +74,40 @@ class celeryExtend(models.Model):
 
     class Meta:
         verbose_name = verbose_name_plural = '用于支持定时调用URL任务'
+
+
+# 网站设置
+class webSiteSet(models.Model):
+    webName = models.CharField(verbose_name='网站名称', max_length=255, default="", null=True, blank=True, )
+    webUrl = models.URLField(verbose_name='网站域名', max_length=255, default="", null=True, blank=True, )
+    cacheTime = models.IntegerField(verbose_name='缓存时间', default="10", null=True, blank=True, )
+    uploadFileSize = models.IntegerField(verbose_name='最大文件上传', default="1024", null=True, blank=True, )
+    fileExt = models.CharField(verbose_name='上传文件类型', max_length=255, default="", null=True, blank=True, )
+    homeTitle = models.CharField(verbose_name='首页标题', max_length=255, default="", null=True, blank=True, )
+    META = models.TextField(verbose_name='META关键词', default="", null=True, blank=True, )
+    METADESC = models.TextField(verbose_name='META描述', default="", null=True, blank=True, )
+    license = models.TextField(verbose_name='版权信息', default="", null=True, blank=True, )
+    createTime = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    lastTime = models.DateTimeField(auto_now=True, verbose_name="修改时间")
+    creator = models.CharField(max_length=255, verbose_name="创建者", blank=True, null=True, default="")
+    editor = models.CharField(max_length=255, verbose_name="修改者", blank=True, null=True, default="")
+
+    class Meta:
+        verbose_name = verbose_name_plural = '网站设置'
+
+# 基本资料
+class userInfo(models.Model):
+    openid = models.CharField(verbose_name='openid', max_length=255, default="", null=True, blank=True, )
+    nickName = models.CharField(verbose_name='昵称', max_length=255, default="", null=True, blank=True, )
+    sex = models.CharField(verbose_name='性别', max_length=255, default="", null=True, blank=True, )
+    avatar = models.ImageField(verbose_name='头像', max_length=255, default="", null=True, blank=True, )
+    phone = models.CharField(verbose_name='手机', max_length=255, default="", null=True, blank=True, )
+    email = models.CharField(verbose_name='邮箱', max_length=255, default="", null=True, blank=True, )
+    desc = models.TextField(verbose_name='备注', default="", null=True, blank=True, )
+    createTime = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    lastTime = models.DateTimeField(auto_now=True, verbose_name="修改时间")
+    creator = models.CharField(max_length=255, verbose_name="创建者", blank=True, null=True, default="")
+    editor = models.CharField(max_length=255, verbose_name="修改者", blank=True, null=True, default="")
+
+    class Meta:
+        verbose_name = verbose_name_plural = '用户信息'

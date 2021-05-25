@@ -23,6 +23,8 @@ from django_celery_beat.models import PeriodicTask, IntervalSchedule
 import json
 from datetime import datetime, timedelta
 from django.db import transaction
+from rest_framework import generics, mixins, views, viewsets
+
 # Create your views here.
 
 
@@ -35,6 +37,42 @@ elif ENV_PROFILE == "test":
     from NetOpsBase import test_settings as config
 else:
     from NetOpsBase import settings as config
+
+
+# 默认数据初始化
+class opsBaseInitDB(APIView):
+    authentication_classes = ()
+    permission_classes = ()
+
+    def get(self, request, *args, **kwargs):
+        # 系统用户
+        # User.objects.delete()
+        User.objects.update_or_create(
+            defaults={'username': 'admin', 'is_staff': True, 'is_active': True, 'first_name': '管理员',
+                      'password': make_password("admin@123")}, username='admin')
+        # 网站设置
+        models.webSiteSet.objects.update_or_create(
+            defaults={'webName': "网络自动化", 'webUrl': 'http://www.netops.com', 'cacheTime': 10, 'uploadFileSize': 1024,
+                      'fileExt': 'png|gif|jpg|jpeg|zip|rar', 'homeTitle': '网络自动化', 'META': 'H3c,huawei,ops,net,自动化',
+                      'METADESC': 'NetOps 网络自动化系统解决方案，采用前后端分离开发模式 是目前非常流行的后台模板框架，广泛用于各类管理平台。',
+                      'license': '© 2018 netops.com MIT license', 'creator': 'admin', 'editor': 'admin'}, id=1)
+
+        # 调度任务
+        schedule, created = IntervalSchedule.objects.get_or_create(every=10, period=IntervalSchedule.SECONDS)
+        # 上面创建10秒的间隔 interval 对象
+        PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': 'my_task2',
+                                                        'task': 'celery_tasks.tasks.my_task2',
+                                                        'expires': datetime.now() + timedelta(seconds=30)
+                                                        }, name='my_task2')
+        # 创建带参数的任务
+        PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': 'my_task1',
+                                                        'task': 'celery_tasks.tasks.my_task1',
+                                                        'args': json.dumps([10, 20, 30]),
+                                                        'expires': datetime.now() + timedelta(
+                                                            seconds=30)
+                                                        }, name='my_task1')
+
+        return HttpResponse("<h1>数据库初始化成功</h1>")
 
 
 class LoginJWTAPIView(APIView):
@@ -504,6 +542,31 @@ class UserViewSet(CustomViewBase):
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
+    # 修改密码
+    @action(methods=['put'], detail=False, url_path='resetPassWord')
+    def resetPassWord(self, request, *args, **kwargs):
+        oldPassword = request.data.get("oldPassword", None)
+        if type(request.user) == dict:
+            username = request.user["username"]
+        else:
+            username = request.user.username
+        currentUser = User.objects.filter(username=username).first()
+        if not currentUser.check_password(oldPassword):
+            return APIResponseResult.APIResponse(-1, '当前密码输入错误')
+        password = request.data.get("password", None)
+        repassword = request.data.get("repassword", None)
+        if password != repassword:
+            return APIResponseResult.APIResponse(-2, '新密码和确认新密码输入不一致')
+
+        currentUser.password = make_password(password)
+        currentUser.save()
+        return APIResponseResult.APIResponse(0, '修改成功')
+
+    # 修改用户信息
+    @action(methods=['put'], detail=False, url_path='resetUserInfo')
+    def resetUserInfo(self, request, *args, **kwargs):
+        pass
+
 
 # 定时任务时间参数 主要用于验证前端传到后台的数据是否合法
 IntervalScheduleDict = {"DAYS": [IntervalSchedule.DAYS, "天"],
@@ -543,7 +606,8 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         args = str(self.initial_data.get("args", "")).strip()
         kwargs = str(self.initial_data.get("kwargs", "")).strip()
         url = str(self.initial_data.get("url", "")).strip()
-        reqmethod = str(self.initial_data.get("reqmethod", "")).strip()
+        # 不知道为何选择Get 获取到的数据 前面会有\b
+        reqmethod = str(self.initial_data.get("reqmethod", "")).replace("\b", "").strip()
         headers = str(self.initial_data.get("headers", "")).strip()
         payload = str(self.initial_data.get("payload", "")).strip()
         runtime = int(str(self.initial_data.get("runtime", "")).strip())
@@ -555,7 +619,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         if intervalType not in IntervalScheduleDict:
             print("intervalType=", intervalType)
             pass
-        print("intervalType 0",IntervalScheduleDict[intervalType][0])
+        print("intervalType 0", IntervalScheduleDict[intervalType][0])
         intervalschedule = IntervalSchedule.objects.create(every=runtime, period=IntervalScheduleDict[intervalType][0])
         taskState = PeriodicTask.objects.filter(name=name).count()
         if taskState == 0:
@@ -569,10 +633,12 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
                                                        expires=expires,
                                                        description=description)
             # 新增扩展类数据
-            celeryextend = models.celeryExtend.objects.create(periodictask=periodictask, tasktype=tasktype, url=url, method=reqmethod,
-                                               headers=headers,
-                                               payload=payload, phone=phone, email=email, creator=username,
-                                               editor=username)
+            celeryextend = models.celeryExtend.objects.create(periodictask=periodictask, tasktype=tasktype, url=url,
+                                                              method=reqmethod,
+                                                              headers=headers,
+                                                              payload=payload, phone=phone, email=email,
+                                                              creator=username,
+                                                              editor=username)
             if tasktype == "1":
                 resultArgs = []
                 resultArgs.append(celeryextend.nid)
@@ -588,7 +654,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "task", "args", "kwargs", "queue", "exchange", "routing_key",
                   "headers", "priority", "expires", "expire_seconds", "one_off", "start_time",
                   "enabled", "last_run_at", "total_run_count", "date_changed", "description", "interval",
-                  "intervalshow","intervaldict", "celeryextend", "crontab", "solar", "clocked"]
+                  "intervalshow", "intervaldict", "celeryextend", "crontab", "solar", "clocked"]
         # depth = 3
 
 
@@ -597,29 +663,54 @@ class PeriodicTaskViewSet(CustomViewBase):
     serializer_class = PeriodicTaskSerializer
 
 
-def tc(request):
-    schedule, created = IntervalSchedule.objects.get_or_create(every=10, period=IntervalSchedule.SECONDS)
+# webSiteSet userInfo 只留下put方法
+# 获取token时 同步新增userInfo
+# init 新增默认网站设置数据webSiteSet
+# 配置左侧菜单
 
-    print("schedule={},created={}", schedule, created)
-    result = IntervalSchedule.objects.all().values()
-    print("result=", result)
-    # 上面创建10秒的间隔 interval 对象
-
-    PeriodicTask.objects.create(interval=schedule,
-                                name='my_task2xxx1',
-                                task='celery_tasks.tasks.my_task2',
-                                expires=datetime.now() + timedelta(
-                                    seconds=30)
-                                )
+class webSiteSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.webSiteSet
+        fields = "__all__"
 
 
+class webSiteSetViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = models.webSiteSet.objects.all().order_by('-id')
+    serializer_class = webSiteSetSerializer
 
-    PeriodicTask.objects.create(interval=schedule, name='my_task1xxx1',
-                                task='celery_tasks.tasks.my_task1',
-                                args=json.dumps([10, 20, 30]),
-                                expires=datetime.now() + timedelta(
-                                    seconds=30)
-                                )
+    def list(self, request, *args, **kwargs):
+        websiteinfo = models.webSiteSet.objects.all().values().order_by('-id')[0]
+        return APIResponseResult.APIResponse(0, 'success', results=websiteinfo, http_status=status.HTTP_200_OK, )
 
 
-    return JsonResponse({"result": list(result)})
+class userInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.userInfo
+        fields = "__all__"
+
+
+class userInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = models.userInfo.objects.all().order_by('-id')
+    serializer_class = userInfoSerializer
+
+    def list(self, request, *args, **kwargs):
+        if type(request.user) == dict:
+            username = request.user["username"]
+        else:
+            username = request.user.username
+
+        obj = models.userInfo.objects.filter(creator=username).first()
+        if obj is None:
+            obj, created = models.userInfo.objects.update_or_create(defaults={'creator': username, 'editor': username},
+                                                                    creator=username)
+        results = {}
+        results.update({"id": obj.id})
+        results.update({"nickName": obj.nickName})
+        results.update({"sex": obj.sex})
+        results.update({"avatar": obj.avatar.name})
+        results.update({"phone": obj.phone})
+        results.update({"email": obj.email})
+        results.update({"desc": obj.desc})
+        results.update({"roles": [{}]})
+        results.update({"username": username})
+        return APIResponseResult.APIResponse(0, 'success', results=results, http_status=status.HTTP_200_OK, )
