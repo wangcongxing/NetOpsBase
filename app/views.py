@@ -651,25 +651,36 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
     # 修改任务
     def update(self, instance, validated_data):
         username = self.context["request"].user["username"]
-        name = str(self.initial_data.get("name", "")).strip()
-        tasktype = str(self.initial_data.get("tasktype", "")).strip()
-        task = str(self.initial_data.get("task", "")).strip()
         intervalType = str(self.initial_data.get("intervalType", "")).strip()
-        args = str(self.initial_data.get("args", "")).strip()
-        kwargs = str(self.initial_data.get("kwargs", "")).strip()
         url = str(self.initial_data.get("url", "")).strip()
         # 不知道为何选择Get 获取到的数据 前面会有\b
         reqmethod = str(self.initial_data.get("reqmethod", "")).replace("\b", "").strip()
         headers = str(self.initial_data.get("headers", "")).strip()
+        proxies = str(self.initial_data.get("proxies", "")).strip()
         payload = str(self.initial_data.get("payload", "")).strip()
         runtime = int(str(self.initial_data.get("runtime", "")).strip())
-        start_time = str(self.initial_data.get("start_time", "")).strip()
-        expires = str(self.initial_data.get("expires", "")).strip()
         phone = str(self.initial_data.get("phone", "")).strip()
         email = str(self.initial_data.get("email", "")).strip()
-        description = str(self.initial_data.get("description", "")).strip()
         with transaction.atomic():
-            pass
+            # 修改计时器
+            interval = IntervalSchedule.objects.get(id=instance.interval.id)
+            interval.every = runtime
+            interval.period = IntervalScheduleDict[intervalType][0]
+            interval.save()
+            # 修改扩展属性类
+            celeryextend = models.celeryExtend.objects.filter(periodictask=instance).first()
+            celeryextend.url = url
+            celeryextend.method = reqmethod
+            celeryextend.headers = headers
+            celeryextend.proxies = proxies
+            celeryextend.payload = payload
+            celeryextend.phone = phone
+            celeryextend.email = email
+            celeryextend.editor = username
+            celeryextend.save()
+            # 修改计划任务
+            obj = super().update(instance, validated_data)
+            return obj
 
     class Meta:
 
