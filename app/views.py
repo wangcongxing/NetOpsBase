@@ -24,7 +24,7 @@ import json
 from datetime import datetime, timedelta
 from django.db import transaction
 from rest_framework import generics, mixins, views, viewsets
-
+from django_filters import rest_framework as filters
 # Create your views here.
 
 
@@ -695,10 +695,22 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         # depth = 3
 
 
+import django_filters
+
+class PeriodicTaskFilter(filters.FilterSet):
+
+    # 模糊过滤
+    name = django_filters.CharFilter(field_name="name", lookup_expr='icontains')
+
+    class Meta:
+        model = PeriodicTask
+        fields = ['name',]
+
 class PeriodicTaskViewSet(CustomViewBase):
     queryset = PeriodicTask.objects.all().order_by('-id')
     serializer_class = PeriodicTaskSerializer
-
+    filter_class = PeriodicTaskFilter
+    ordering_fields = ('id', 'expires')  # 排序
     # 修改密码
     @action(methods=['put'], detail=False, url_path='resetEnabled')
     def resetEnabled(self, request, *args, **kwargs):

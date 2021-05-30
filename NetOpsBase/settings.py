@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'app.apps.AppConfig',
     'rest_framework',
     'django_celery_beat',  #安装 django_celery_beat
+    'django_filters',
 ]
 
 MIDDLEWARE = [
