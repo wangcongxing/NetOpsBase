@@ -12,8 +12,9 @@ from celery import shared_task
 # celery -A NetOpsBase worker --pool=solo -l info -f logs/celery.log # 带日志启动
 from celery_tasks.celeryapp import app
 import time
-import requests
+import requests, json
 from app import models as appModel
+import ast
 
 
 # 创建任务函数
@@ -21,7 +22,7 @@ from app import models as appModel
 def my_task1(a, b, c):
     print("任务1函数正在执行....")
     print("任务1函数休眠10秒...")
-    #time.sleep(10)
+    # time.sleep(10)
     return a + b + c
 
 
@@ -42,8 +43,8 @@ def my_task2():
     response = requests.get(url, proxies=proxies)
 
     print(response.text)
-    print("response.text===================>",response.text)
-    #time.sleep(10)
+    print("response.text===================>", response.text)
+    # time.sleep(10)
     return url
 
 
@@ -51,24 +52,12 @@ def my_task2():
 def sendUrl(nid):
     print("nid=", nid)
 
-
-    celeryextend = appModel.celeryExtend.objects.filter(nid=nid).first()
+    celeryextend = appModel.celeryExtend.objects.filter(id=nid).first()
     if celeryextend is None:
         return "nid={},未找到需要请求的url,请求失败...".format(nid)
-    headers = {
-        'Content-Type': 'application/json'
-    }
 
-    #url = "http://127.0.0.1:7000/opsbase/app/menu/?access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwiZXhwIjoxNjIyMjEyOTk4LCJlbWFpbCI6IiJ9.vDJPoy8JKwI6BEeIYdo85pjkFnOWhjyCzQ5mVVywZxQ"
-
-    payload = {}
-    headers = {}
-    proxies = {
-        "http": None,
-        "https": None,
-    }
-
-    response = requests.get(celeryextend.url, proxies=proxies)
-
+    response = requests.request(celeryextend.method, celeryextend.url, headers=ast.literal_eval(celeryextend.headers),
+                                proxies=ast.literal_eval(celeryextend.proxies),
+                                data=ast.literal_eval(celeryextend.payload))
     print(response.text)
     return response.text  # response.text

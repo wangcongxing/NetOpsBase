@@ -62,14 +62,13 @@ class opsBaseInitDB(APIView):
         # 上面创建10秒的间隔 interval 对象
         PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': 'my_task2',
                                                         'task': 'celery_tasks.tasks.my_task2',
-                                                        'expires': datetime.now() + timedelta(seconds=30)
+                                                        # 'expires': (datetime.now()+timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
                                                         }, name='my_task2')
         # 创建带参数的任务
         PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': 'my_task1',
                                                         'task': 'celery_tasks.tasks.my_task1',
                                                         'args': json.dumps([10, 20, 30]),
-                                                        'expires': datetime.now() + timedelta(
-                                                            seconds=30)
+                                                        # 'expires': (datetime.now()+timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
                                                         }, name='my_task1')
 
         return HttpResponse("<h1>数据库初始化成功</h1>")
@@ -230,7 +229,7 @@ class MenuViewSet(CustomViewBase):
         menus = models.Menu.objects.filter(Q(group__id__in=group_permission_id) |
                                            Q(permission__id__in=user_permission_id),
                                            parent__isnull=False).distinct().order_by('sort')
-        print(menus.query)
+        # print(menus.query)
         print("menus", len(menus))
         for item in menus:
             print("item.title", item.title)
@@ -597,6 +596,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
     def get_celeryextend(self, obj):
         return models.celeryExtend.objects.filter(periodictask=obj).values()
 
+    # 新增任务
     def create(self, validated_data):
         username = self.context["request"].user["username"]
         name = str(self.initial_data.get("name", "")).strip()
@@ -627,8 +627,8 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             periodictask = PeriodicTask.objects.create(interval=intervalschedule, name=name,
                                                        task=task,
-                                                       args=json.dumps(args),
-                                                       kwargs=json.dumps({}),
+                                                       args=args,
+                                                       kwargs={},
                                                        start_time=start_time,
                                                        expires=expires,
                                                        description=description)
@@ -641,12 +641,35 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
                                                               editor=username)
             if tasktype == "1":
                 resultArgs = []
-                resultArgs.append(celeryextend.nid)
-                periodictask.args = json.dumps(resultArgs)
+                resultArgs.append(celeryextend.id)
+                periodictask.args = resultArgs
                 periodictask.save()
 
         print("periodictask={}".format(periodictask))
         return periodictask
+
+    # 修改任务
+    def update(self, instance, validated_data):
+        username = self.context["request"].user["username"]
+        name = str(self.initial_data.get("name", "")).strip()
+        tasktype = str(self.initial_data.get("tasktype", "")).strip()
+        task = str(self.initial_data.get("task", "")).strip()
+        intervalType = str(self.initial_data.get("intervalType", "")).strip()
+        args = str(self.initial_data.get("args", "")).strip()
+        kwargs = str(self.initial_data.get("kwargs", "")).strip()
+        url = str(self.initial_data.get("url", "")).strip()
+        # 不知道为何选择Get 获取到的数据 前面会有\b
+        reqmethod = str(self.initial_data.get("reqmethod", "")).replace("\b", "").strip()
+        headers = str(self.initial_data.get("headers", "")).strip()
+        payload = str(self.initial_data.get("payload", "")).strip()
+        runtime = int(str(self.initial_data.get("runtime", "")).strip())
+        start_time = str(self.initial_data.get("start_time", "")).strip()
+        expires = str(self.initial_data.get("expires", "")).strip()
+        phone = str(self.initial_data.get("phone", "")).strip()
+        email = str(self.initial_data.get("email", "")).strip()
+        description = str(self.initial_data.get("description", "")).strip()
+        with transaction.atomic():
+            pass
 
     class Meta:
 
@@ -661,6 +684,19 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
 class PeriodicTaskViewSet(CustomViewBase):
     queryset = PeriodicTask.objects.all().order_by('-id')
     serializer_class = PeriodicTaskSerializer
+
+    # 修改密码
+    @action(methods=['put'], detail=False, url_path='resetEnabled')
+    def resetEnabled(self, request, *args, **kwargs):
+        nid = request.data.get('nid', None)
+        if nid is None:
+            return APIResponseResult.APIResponse(-1, '请求发生错误,请稍后再试!')
+        periodictask = PeriodicTask.objects.filter(id=nid).first()
+        if periodictask is None:
+            return APIResponseResult.APIResponse(-2, '请求数据不存在,请稍后再试!')
+        periodictask.enabled = False if periodictask.enabled else True
+        periodictask.save()
+        return APIResponseResult.APIResponse(0, "已启用" if periodictask.enabled else "已禁用")
 
 
 # webSiteSet userInfo 只留下put方法

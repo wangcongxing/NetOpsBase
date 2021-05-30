@@ -61,6 +61,8 @@ class celeryExtend(models.Model):
                               blank=True, )
     headers = models.TextField(verbose_name='请求头', max_length=50000, default="", null=True,
                                blank=True, )
+    proxies = models.TextField(verbose_name='请求代理', max_length=50000, default="{'http': None,'https': None,}", null=True,
+                               blank=True, )
     payload = models.TextField(verbose_name='请求体', max_length=50000, default="", null=True,
                                blank=True, )
     phone = models.CharField(verbose_name='手机号码', max_length=255, default="", null=True,
@@ -94,6 +96,7 @@ class webSiteSet(models.Model):
 
     class Meta:
         verbose_name = verbose_name_plural = '网站设置'
+
 
 # 基本资料
 class userInfo(models.Model):
