@@ -661,6 +661,9 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         runtime = int(str(self.initial_data.get("runtime", "")).strip())
         phone = str(self.initial_data.get("phone", "")).strip()
         email = str(self.initial_data.get("email", "")).strip()
+        if intervalType == "":
+            print("----如何返回提示信息")
+            return False
         with transaction.atomic():
             # 修改计时器
             interval = IntervalSchedule.objects.get(id=instance.interval.id)
