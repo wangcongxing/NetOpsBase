@@ -10,6 +10,7 @@ from celery import shared_task
 
 # celery -A NetOpsBase worker -l info # 不带日志启动
 # celery -A NetOpsBase worker --pool=solo -l info -f logs/celery.log # 带日志启动
+# 修改tasks 类必须重启 否则无法生效滴
 from celery_tasks.celeryapp import app
 import time
 import requests, json
@@ -31,22 +32,6 @@ def my_task2():
     print("任务2函数正在执行....")
     print("任务2函数休眠10秒....")
 
-    url = "http://127.0.0.1:7000/opsbase/app/menu/?access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwiZXhwIjoxNjIyMjEyOTk4LCJlbWFpbCI6IiJ9.vDJPoy8JKwI6BEeIYdo85pjkFnOWhjyCzQ5mVVywZxQ"
-
-    payload = {}
-    headers = {}
-    proxies = {
-        "http": None,
-        "https": None,
-    }
-
-    response = requests.get(url, proxies=proxies)
-
-    print(response.text)
-    print("response.text===================>", response.text)
-    # time.sleep(10)
-    return url
-
 
 @app.task
 def sendUrl(nid):
@@ -56,7 +41,7 @@ def sendUrl(nid):
     if celeryextend is None:
         return "nid={},未找到需要请求的url,请求失败...".format(nid)
 
-    response = requests.request(celeryextend.method, celeryextend.url, headers=ast.literal_eval(celeryextend.headers),
+    response = requests.request(celeryextend.reqmethod, celeryextend.url, headers=ast.literal_eval(celeryextend.reqheaders),
                                 proxies=ast.literal_eval(celeryextend.proxies),
                                 data=ast.literal_eval(celeryextend.payload))
     print(response.text)

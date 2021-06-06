@@ -6,7 +6,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from app import models
+from app import models, modelFilters, modelSerializers
 from utils import APIResponseResult
 from utils.CustomViewBase import CustomViewBase
 from django.contrib.auth.models import User, Group, Permission
@@ -27,6 +27,11 @@ from rest_framework import generics, mixins, views, viewsets
 from django_filters import rest_framework as filters
 # Create your views here.
 
+# webSiteSet userInfo 只留下put方法
+# 获取token时 同步新增userInfo
+# init 新增默认网站设置数据webSiteSet
+# 配置左侧菜单
+# IntervalSchedule 数据存储异常的问题【seconds，5秒】
 
 from django.core.cache import cache  # 引入缓存模块
 
@@ -58,18 +63,38 @@ class opsBaseInitDB(APIView):
                       'license': '© 2018 netops.com MIT license', 'creator': 'admin', 'editor': 'admin'}, id=1)
 
         # 调度任务
-        schedule, created = IntervalSchedule.objects.get_or_create(every=10, period=IntervalSchedule.SECONDS)
-        # 上面创建10秒的间隔 interval 对象
-        PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': 'my_task2',
+        # 创建10秒的间隔 interval 对象
+        schedule, created = IntervalSchedule.objects.update_or_create(
+            defaults={'every': 5, 'period': IntervalSchedule.SECONDS}, id=1)
+        # 无参函数定时任务
+        PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': '无参函数定时任务',
                                                         'task': 'celery_tasks.tasks.my_task2',
                                                         # 'expires': (datetime.now()+timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-                                                        }, name='my_task2')
+                                                        }, name='无参函数定时任务')
         # 创建带参数的任务
-        PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': 'my_task1',
+        PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': '有参函数定时任务',
                                                         'task': 'celery_tasks.tasks.my_task1',
                                                         'args': json.dumps([10, 20, 30]),
                                                         # 'expires': (datetime.now()+timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-                                                        }, name='my_task1')
+                                                        }, name='有参函数定时任务')
+        # 第三方定时服务
+        periodictask = PeriodicTask.objects.update_or_create(defaults={'interval': schedule, 'name': '第三方服务',
+                                                                       'task': 'celery_tasks.tasks.sendUrl',
+                                                                       # 'expires': (datetime.now()+timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                                                                       }, name='第三方服务')
+        # 新增扩展类数据
+        celeryextend, c = models.celeryExtend.objects.update_or_create(
+            defaults={'periodictask': periodictask, 'tasktype': 1,
+                      'url': 'http://127.0.0.1:7000/opsbase/app/opsBaseInit', 'reqmethod': 'GET',
+                      'reqheaders': "{'Content-Type': 'application/json'}",
+                      'proxies': "{'http': None,'https': None,}",
+                      'payload': {}, 'phone': '19865875737', 'email': '2256807897@qq.com', 'creator': 'admin',
+                      'editor': 'admin'}, id=1)
+
+        resultArgs = []
+        resultArgs.append(celeryextend.id)
+        periodictask.args = resultArgs
+        periodictask.save()
 
         return HttpResponse("<h1>数据库初始化成功</h1>")
 
@@ -125,55 +150,10 @@ class CheckAuthUserAPIView(APIView):
         })
 
 
-class MenuSerializer(serializers.ModelSerializer):
-    parent = serializers.PrimaryKeyRelatedField(read_only=True)
-    parentmenu = serializers.SerializerMethodField()
-
-    def get_parentmenu(self, obj):
-        title_list = [obj.title, ]
-        p = obj.parent
-        while p:
-            # caption_list.append(p.caption)
-            title_list.insert(0, p.title)
-            p = p.parent
-        return "-".join(title_list)
-
-    def create(self, validated_data):
-        username = self.context["request"].user["username"]
-        validated_data.update({"creator": username, "editor": username})
-        if "parent" in self.initial_data and self.initial_data["parent"]:
-            validated_data.update({"parent_id": int(self.initial_data["parent"])})
-        objmenu = models.Menu.objects.create(**validated_data)
-
-        print(validated_data)
-
-        # 添加组
-        groupinfo = filter(None, str(self.initial_data["groupinfo"]).split(','))
-        for p in groupinfo:
-            objmenu.group.add(Group.objects.filter(id=int(p)).first())
-
-        # 添加权限
-        permissioninfo = filter(None, str(self.initial_data["permissioninfo"]).split(','))
-        for p in permissioninfo:
-            objmenu.permission.add(Permission.objects.filter(id=int(p)).first())
-
-        return objmenu
-
-    # def update(self, instance, validated_data):
-    #     print("instance===", instance)
-    #     instance.save()
-    #     return instance
-
-    class Meta:
-        model = models.Menu
-        fields = ["id", "title", "name", "url", "sort", "icon", "parent", "parentmenu", "group", "permission", "desc"]
-        depth = 1
-
-
 # 系统左侧菜单管理
 class MenuViewSet(CustomViewBase):
     queryset = models.Menu.objects.all().order_by('-id')
-    serializer_class = MenuSerializer
+    serializer_class = modelSerializers.MenuSerializer
 
     # 返回菜单上下级关系
     @action(methods=['get', 'post'], detail=False, url_path='parent_menu')
@@ -303,41 +283,14 @@ class MenuViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
 
-# 系统ContentType管理
-class ContentTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ContentType
-        fields = '__all__'
-        depth = 1
-
-
 class ContentTypeViewSet(CustomViewBase):
     queryset = ContentType.objects.all().order_by('-id')
-    serializer_class = ContentTypeSerializer
-
-
-# 系统权限菜单管理
-class PermissionSerializer(serializers.ModelSerializer):
-
-    def create(self, validated_data):
-        app_label = self.initial_data["app_label"]
-        model_name = self.initial_data["model_name"]
-
-        content_type = ContentType.objects.create(app_label=app_label, model=model_name)
-
-        validated_data.update({"content_type_id": content_type.id})
-        print(validated_data)
-        return Permission.objects.create(**validated_data)
-
-    class Meta:
-        model = Permission
-        fields = '__all__'
-        depth = 1
+    serializer_class = modelSerializers.ContentTypeSerializer
 
 
 class PermissionViewSet(CustomViewBase):
     queryset = Permission.objects.filter(id__gt=28).order_by('-id')
-    serializer_class = PermissionSerializer
+    serializer_class = modelSerializers.PermissionSerializer
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
@@ -385,25 +338,9 @@ class PermissionViewSet(CustomViewBase):
                                              http_status=status.HTTP_200_OK, )
 
 
-# 系统组菜单管理
-class GroupSerializer(serializers.ModelSerializer):
-
-    def create(self, validated_data):
-        objGroup = Group.objects.create(**validated_data)
-        permissioninfo = filter(None, str(self.initial_data["permissioninfo"]).split(','))
-        for p in permissioninfo:
-            objGroup.permissions.add(Permission.objects.filter(id=int(p)).first())
-        return objGroup
-
-    class Meta:
-        model = Group
-        fields = '__all__'
-        depth = 1
-
-
 class GroupViewSet(CustomViewBase):
     queryset = Group.objects.all().order_by('-id')
-    serializer_class = GroupSerializer
+    serializer_class = modelSerializers.GroupSerializer
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -451,51 +388,9 @@ class GroupViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
 
-# 系统权限菜单管理
-class UserSerializer(serializers.ModelSerializer):
-
-    def create(self, validated_data):
-        password = self.initial_data["password"]
-        if "is_staff" in self.initial_data:
-            validated_data.update({"is_staff": self.initial_data["is_staff"]})
-        if "is_active" in self.initial_data:
-            validated_data.update({"is_active": self.initial_data["is_active"]})
-        if "is_superuser" in self.initial_data:
-            validated_data.update({"is_superuser": self.initial_data["is_superuser"]})
-        # 随机密码 仅用于ad域认证
-        if "password" in self.initial_data:
-
-            validated_data.update({"password": make_password(password)})
-        else:
-            validated_data.update({"password": make_password(str(uuid.uuid4()))})
-        cuser = User.objects.create(**validated_data)
-
-        # 添加组
-        groupinfo = filter(None, str(self.initial_data["groupinfo"]).split(','))
-        for p in groupinfo:
-            cuser.groups.add(Group.objects.filter(id=int(p)).first())
-
-        # 添加权限
-        permissioninfo = filter(None, str(self.initial_data["permissioninfo"]).split(','))
-        for p in permissioninfo:
-            cuser.user_permissions.add(Permission.objects.filter(id=int(p)).first())
-
-        return cuser
-
-    # def update(self, instance, validated_data):
-    #     pass
-
-    class Meta:
-        model = User
-        fields = ["id", "username", "first_name", "last_name", "email", "groups", "user_permissions", "is_staff",
-                  "is_active",
-                  "is_superuser", "date_joined", "last_login"]
-        depth = 3
-
-
 class UserViewSet(CustomViewBase):
     queryset = User.objects.all().order_by('-username')
-    serializer_class = UserSerializer
+    serializer_class = modelSerializers.UserSerializer
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -567,151 +462,13 @@ class UserViewSet(CustomViewBase):
         pass
 
 
-# 定时任务时间参数 主要用于验证前端传到后台的数据是否合法
-IntervalScheduleDict = {"DAYS": [IntervalSchedule.DAYS, "天"],
-                        "HOURS": [IntervalSchedule.HOURS, "时"],
-                        "MINUTES": [IntervalSchedule.MINUTES, "分"],
-                        "SECONDS": [IntervalSchedule.SECONDS, "秒"],
-                        "MICROSECONDS": [IntervalSchedule.MICROSECONDS, "微秒"], }
-
-
-class PeriodicTaskSerializer(serializers.ModelSerializer):
-    intervalshow = serializers.SerializerMethodField()
-    intervaldict = serializers.SerializerMethodField()
-    celeryextend = serializers.SerializerMethodField()
-
-    def get_intervalshow(self, obj):
-        if obj.interval:
-            return "每{}{}运行/次".format(str(obj.interval.every),
-                                      IntervalScheduleDict[str(obj.interval.period).upper()][1])
-        else:
-            return "空"
-
-    def get_intervaldict(self, obj):
-        if obj.interval:
-            return [obj.interval.every, obj.interval.period]
-        else:
-            return []
-
-    def get_celeryextend(self, obj):
-        return models.celeryExtend.objects.filter(periodictask=obj).values()
-
-    # 新增任务
-    def create(self, validated_data):
-        username = self.context["request"].user["username"]
-        name = str(self.initial_data.get("name", "")).strip()
-        tasktype = str(self.initial_data.get("tasktype", "")).strip()
-        task = str(self.initial_data.get("task", "")).strip()
-        intervalType = str(self.initial_data.get("intervalType", "")).strip()
-        args = str(self.initial_data.get("args", "")).strip()
-        kwargs = str(self.initial_data.get("kwargs", "")).strip()
-        url = str(self.initial_data.get("url", "")).strip()
-        # 不知道为何选择Get 获取到的数据 前面会有\b
-        reqmethod = str(self.initial_data.get("reqmethod", "")).replace("\b", "").strip()
-        headers = str(self.initial_data.get("headers", "")).strip()
-        payload = str(self.initial_data.get("payload", "")).strip()
-        runtime = int(str(self.initial_data.get("runtime", "")).strip())
-        start_time = str(self.initial_data.get("start_time", "")).strip()
-        expires = str(self.initial_data.get("expires", "")).strip()
-        phone = str(self.initial_data.get("phone", "")).strip()
-        email = str(self.initial_data.get("email", "")).strip()
-        description = str(self.initial_data.get("description", "")).strip()
-        if intervalType not in IntervalScheduleDict:
-            print("intervalType=", intervalType)
-            pass
-        print("intervalType 0", IntervalScheduleDict[intervalType][0])
-        intervalschedule = IntervalSchedule.objects.create(every=runtime, period=IntervalScheduleDict[intervalType][0])
-        taskState = PeriodicTask.objects.filter(name=name).count()
-        if taskState == 0:
-            name = name + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        with transaction.atomic():
-            periodictask = PeriodicTask.objects.create(interval=intervalschedule, name=name,
-                                                       task=task,
-                                                       args=args,
-                                                       kwargs={},
-                                                       start_time=start_time,
-                                                       expires=expires,
-                                                       description=description)
-            # 新增扩展类数据
-            celeryextend = models.celeryExtend.objects.create(periodictask=periodictask, tasktype=tasktype, url=url,
-                                                              method=reqmethod,
-                                                              headers=headers,
-                                                              payload=payload, phone=phone, email=email,
-                                                              creator=username,
-                                                              editor=username)
-            if tasktype == "1":
-                resultArgs = []
-                resultArgs.append(celeryextend.id)
-                periodictask.args = resultArgs
-                periodictask.save()
-
-        print("periodictask={}".format(periodictask))
-        return periodictask
-
-    # 修改任务
-    def update(self, instance, validated_data):
-        username = self.context["request"].user["username"]
-        intervalType = str(self.initial_data.get("intervalType", "")).strip()
-        url = str(self.initial_data.get("url", "")).strip()
-        # 不知道为何选择Get 获取到的数据 前面会有\b
-        reqmethod = str(self.initial_data.get("reqmethod", "")).replace("\b", "").strip()
-        headers = str(self.initial_data.get("headers", "")).strip()
-        proxies = str(self.initial_data.get("proxies", "")).strip()
-        payload = str(self.initial_data.get("payload", "")).strip()
-        runtime = int(str(self.initial_data.get("runtime", "")).strip())
-        phone = str(self.initial_data.get("phone", "")).strip()
-        email = str(self.initial_data.get("email", "")).strip()
-        if intervalType == "":
-            print("----如何返回提示信息")
-            return False
-        with transaction.atomic():
-            # 修改计时器
-            interval = IntervalSchedule.objects.get(id=instance.interval.id)
-            interval.every = runtime
-            interval.period = IntervalScheduleDict[intervalType][0]
-            interval.save()
-            # 修改扩展属性类
-            celeryextend = models.celeryExtend.objects.filter(periodictask=instance).first()
-            celeryextend.url = url
-            celeryextend.method = reqmethod
-            celeryextend.headers = headers
-            celeryextend.proxies = proxies
-            celeryextend.payload = payload
-            celeryextend.phone = phone
-            celeryextend.email = email
-            celeryextend.editor = username
-            celeryextend.save()
-            # 修改计划任务
-            obj = super().update(instance, validated_data)
-            return obj
-
-    class Meta:
-
-        model = PeriodicTask
-        fields = ["id", "name", "task", "args", "kwargs", "queue", "exchange", "routing_key",
-                  "headers", "priority", "expires", "expire_seconds", "one_off", "start_time",
-                  "enabled", "last_run_at", "total_run_count", "date_changed", "description", "interval",
-                  "intervalshow", "intervaldict", "celeryextend", "crontab", "solar", "clocked"]
-        # depth = 3
-
-
-import django_filters
-
-class PeriodicTaskFilter(filters.FilterSet):
-
-    # 模糊过滤
-    name = django_filters.CharFilter(field_name="name", lookup_expr='icontains')
-
-    class Meta:
-        model = PeriodicTask
-        fields = ['name',]
-
 class PeriodicTaskViewSet(CustomViewBase):
     queryset = PeriodicTask.objects.all().order_by('-id')
-    serializer_class = PeriodicTaskSerializer
-    filter_class = PeriodicTaskFilter
+    serializer_class = modelSerializers.PeriodicTaskSerializer
+    filter_class =modelFilters.PeriodicTaskFilter
     ordering_fields = ('id', 'expires')  # 排序
-    # 修改密码
+
+    # 修改状态
     @action(methods=['put'], detail=False, url_path='resetEnabled')
     def resetEnabled(self, request, *args, **kwargs):
         nid = request.data.get('nid', None)
@@ -725,35 +482,18 @@ class PeriodicTaskViewSet(CustomViewBase):
         return APIResponseResult.APIResponse(0, "已启用" if periodictask.enabled else "已禁用")
 
 
-# webSiteSet userInfo 只留下put方法
-# 获取token时 同步新增userInfo
-# init 新增默认网站设置数据webSiteSet
-# 配置左侧菜单
-
-class webSiteSetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.webSiteSet
-        fields = "__all__"
-
-
 class webSiteSetViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = models.webSiteSet.objects.all().order_by('-id')
-    serializer_class = webSiteSetSerializer
+    serializer_class = modelSerializers.webSiteSetSerializer
 
     def list(self, request, *args, **kwargs):
         websiteinfo = models.webSiteSet.objects.all().values().order_by('-id')[0]
         return APIResponseResult.APIResponse(0, 'success', results=websiteinfo, http_status=status.HTTP_200_OK, )
 
 
-class userInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.userInfo
-        fields = "__all__"
-
-
 class userInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = models.userInfo.objects.all().order_by('-id')
-    serializer_class = userInfoSerializer
+    serializer_class = modelSerializers.userInfoSerializer
 
     def list(self, request, *args, **kwargs):
         if type(request.user) == dict:

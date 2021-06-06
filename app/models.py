@@ -57,9 +57,9 @@ class celeryExtend(models.Model):
     nid = models.CharField(max_length=255, verbose_name="任务id", blank=False, null=False, default=newuuid)
     url = models.URLField(verbose_name='URL地址', max_length=255, default="", null=True,
                           blank=True, )
-    method = models.CharField(verbose_name='请求方式', max_length=255, default="", null=True,
+    reqmethod = models.CharField(verbose_name='请求方式', max_length=255, default="", null=True,
                               blank=True, )
-    headers = models.TextField(verbose_name='请求头', max_length=50000, default="", null=True,
+    reqheaders = models.TextField(verbose_name='请求头', max_length=50000, default="", null=True,
                                blank=True, )
     proxies = models.TextField(verbose_name='请求代理', max_length=50000, default="{'http': None,'https': None,}", null=True,
                                blank=True, )

@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app.apps.AppConfig',
     'rest_framework',
-    'django_celery_beat',  #安装 django_celery_beat
+    'django_celery_beat',  # 安装 django_celery_beat
     'django_filters',
 ]
 
@@ -53,7 +53,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 
 EVENTSTREAM_ALLOW_ORIGIN = "*"
 EVENTSTREAM_ALLOW_CREDENTIALS = False
@@ -149,7 +148,6 @@ TIME_ZONE = 'Asia/Shanghai'  # 设置Django使用中国上海时间
 # 如果USE_TZ 设置为False,TIME_ZONE = 'Asia/Shanghai', 则使用上海的UTC时间。
 USE_TZ = True
 
-
 USE_I18N = True  # 默认为True，是否启用自动翻译系统
 USE_L10N = True  # 默认False，以本地化格式显示数字和时间
 
@@ -169,6 +167,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         # 'rest_framework.permissions.IsAuthenticated',  建议是特定接口特定认证
     ),
+    # 配置导出excel
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+        'drf_renderer_xlsx.renderers.XLSXRenderer',
+    ],
     # 用户登陆认证方式
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',

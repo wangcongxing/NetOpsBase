@@ -70,3 +70,12 @@ class CustomViewBase(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return APIResponseResult.APIResponse(0, 'success',
                                              http_status=status.HTTP_200_OK, )
+
+    # 批量删除
+    @action(methods=['delete'], detail=False, url_path='multiple_delete')
+    def multiple_delete(self, request, *args, **kwargs):
+        delete_id = request.data.get("deleteid","")
+        list_ids = list(filter(None, delete_id.split(',')))
+        list_ids = [int(x) for x in list_ids if x.split()]
+        self.queryset.model.objects.filter(id__in=list_ids).delete()
+        return APIResponseResult.APIResponse(0, "删除成功",results=list_ids)
