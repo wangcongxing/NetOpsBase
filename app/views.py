@@ -6,7 +6,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from app import models, modelFilters, modelSerializers
+from app import models, modelFilters, modelSerializers,modelPermission
 from utils import APIResponseResult
 from utils.CustomViewBase import CustomViewBase
 from django.contrib.auth.models import User, Group, Permission
@@ -467,6 +467,7 @@ class PeriodicTaskViewSet(CustomViewBase):
     serializer_class = modelSerializers.PeriodicTaskSerializer
     filter_class =modelFilters.PeriodicTaskFilter
     ordering_fields = ('id', 'expires')  # 排序
+    permission_classes = [modelPermission.PeriodicTaskPermission]
 
     # 修改状态
     @action(methods=['put'], detail=False, url_path='resetEnabled')

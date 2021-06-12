@@ -136,13 +136,28 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         # depth = 3
 
 class PeriodicTaskExportSerializer(serializers.ModelSerializer):
+    one_off_show = serializers.SerializerMethodField()
+    intervalshow = serializers.SerializerMethodField()
+
+    def get_intervalshow(self, obj):
+        if obj.interval:
+            return "每{}{}运行/次".format(str(obj.interval.every),
+                                      IntervalScheduleDict[str(obj.interval.period).upper()][1])
+        else:
+            return "空"
+
+    def get_one_off_show(self,obj):
+        if obj.one_off:
+            return "否"
+        else:
+            return "是"
 
     class Meta:
 
         model = PeriodicTask
         fields = ["id", "name", "task", "args", "kwargs", "queue", "exchange", "routing_key",
-                  "headers", "priority", "expires", "expire_seconds", "one_off", "start_time",
-                  "enabled", "last_run_at", "total_run_count", "date_changed", "description", "interval",
+                  "headers", "priority", "expires", "expire_seconds", "one_off_show", "start_time",
+                  "enabled", "last_run_at", "total_run_count", "date_changed", "description", "intervalshow",
                    "crontab", "solar", "clocked"]
 
 # 网站设置实体化

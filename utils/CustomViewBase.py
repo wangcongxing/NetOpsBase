@@ -14,14 +14,25 @@ from django_filters import rest_framework
 from django_filters.rest_framework import DjangoFilterBackend
 
 
+# 设置分页
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 10  # 每页显示多少条
+    page_size_query_param = 'limit'  # URL中每页显示条数的参数
+    page_query_param = 'page'  # URL中页码的参数
+    max_page_size = 100  # 最大页码数限制
+
+
 class CustomViewBase(viewsets.ModelViewSet):
-    # pagination_class = LargeResultsSetPagination
+    # 注意不是列表（只能有一个分页模式）
+    #pagination_class = PageNumberPagination
+    # 自定义分页模式，不要写在base类中，如需要单独配置，请在views中通过继承的方式重写
+    pagination_class = LargeResultsSetPagination
     # filter_class = ServerFilter
-    #queryset = ''
-    #serializer_class = ''
-    #permission_classes = ()
-    #filter_fields = ()
-    #search_fields = ()
+    # queryset = ''
+    # serializer_class = ''
+    # permission_classes = ()
+    # filter_fields = ()
+    # search_fields = ()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter,)
 
     def create(self, request, *args, **kwargs):
@@ -38,7 +49,11 @@ class CustomViewBase(viewsets.ModelViewSet):
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            return APIResponseResult.APIResponse(0, 'success',
+                                                 results=serializer.data,
+                                                 http_status=status.HTTP_200_OK, **{"count": len(queryset)})
+
+            # return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
         return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
@@ -74,8 +89,8 @@ class CustomViewBase(viewsets.ModelViewSet):
     # 批量删除
     @action(methods=['delete'], detail=False, url_path='multiple_delete')
     def multiple_delete(self, request, *args, **kwargs):
-        delete_id = request.data.get("deleteid","")
+        delete_id = request.data.get("deleteid", "")
         list_ids = list(filter(None, delete_id.split(',')))
         list_ids = [int(x) for x in list_ids if x.split()]
         self.queryset.model.objects.filter(id__in=list_ids).delete()
-        return APIResponseResult.APIResponse(0, "删除成功",results=list_ids)
+        return APIResponseResult.APIResponse(0, "删除成功", results=list_ids)

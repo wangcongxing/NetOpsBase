@@ -165,15 +165,19 @@ wwopeninit = {
 REST_FRAMEWORK = {
     # 设置所有接口都需要被验证
     'DEFAULT_PERMISSION_CLASSES': (
-        # 'rest_framework.permissions.IsAuthenticated',  建议是特定接口特定认证
+        #'rest_framework.permissions.IsAuthenticated',  #建议是特定接口特定认证
+        #'rest_framework.permissions.AllowAny',
     ),
+    # 分页配置
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10,
     # 配置导出excel
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
         'drf_renderer_xlsx.renderers.XLSXRenderer',
     ],
-    # 用户登陆认证方式
+    # 用户登录认证方式
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
