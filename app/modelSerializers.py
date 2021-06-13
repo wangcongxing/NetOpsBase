@@ -1,7 +1,7 @@
 # 用于设置model serializers
 from rest_framework import viewsets, serializers, status
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
-import os, uuid, time
+import os, uuid, time, random
 from django.db import transaction
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -14,6 +14,7 @@ IntervalScheduleDict = {"DAYS": [IntervalSchedule.DAYS, "天"],
                         "MINUTES": [IntervalSchedule.MINUTES, "分"],
                         "SECONDS": [IntervalSchedule.SECONDS, "秒"],
                         "MICROSECONDS": [IntervalSchedule.MICROSECONDS, "微秒"], }
+
 
 class PeriodicTaskSerializer(serializers.ModelSerializer):
     intervalshow = serializers.SerializerMethodField()
@@ -110,17 +111,18 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
             interval.every = runtime
             interval.period = IntervalScheduleDict[intervalType][0]
             interval.save()
-            # 修改扩展属性类
-            celeryextend = models.celeryExtend.objects.filter(periodictask=instance).first()
-            celeryextend.url = url
-            celeryextend.reqmethod = reqmethod
-            celeryextend.reqheaders = reqheaders
-            celeryextend.proxies = proxies
-            celeryextend.payload = payload
-            celeryextend.phone = phone
-            celeryextend.email = email
-            celeryextend.editor = username
-            celeryextend.save()
+            # 修改扩展属性类 任务是第三方扩展服务的时候在执行修改操作
+            if self.initial_data['tasktype'] == '1':
+                celeryextend = models.celeryExtend.objects.filter(periodictask=instance).first()
+                celeryextend.url = url
+                celeryextend.reqmethod = reqmethod
+                celeryextend.reqheaders = reqheaders
+                celeryextend.proxies = proxies
+                celeryextend.payload = payload
+                celeryextend.phone = phone
+                celeryextend.email = email
+                celeryextend.editor = username
+                celeryextend.save()
             # 修改计划任务
             validated_data["enabled"] = True
             obj = super().update(instance, validated_data)
@@ -135,6 +137,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
                   "intervalshow", "intervaldict", "celeryextend", "crontab", "solar", "clocked"]
         # depth = 3
 
+
 class PeriodicTaskExportSerializer(serializers.ModelSerializer):
     one_off_show = serializers.SerializerMethodField()
     intervalshow = serializers.SerializerMethodField()
@@ -146,7 +149,7 @@ class PeriodicTaskExportSerializer(serializers.ModelSerializer):
         else:
             return "空"
 
-    def get_one_off_show(self,obj):
+    def get_one_off_show(self, obj):
         if obj.one_off:
             return "否"
         else:
@@ -158,7 +161,8 @@ class PeriodicTaskExportSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "task", "args", "kwargs", "queue", "exchange", "routing_key",
                   "headers", "priority", "expires", "expire_seconds", "one_off_show", "start_time",
                   "enabled", "last_run_at", "total_run_count", "date_changed", "description", "intervalshow",
-                   "crontab", "solar", "clocked"]
+                  "crontab", "solar", "clocked"]
+
 
 # 网站设置实体化
 class webSiteSetSerializer(serializers.ModelSerializer):
@@ -166,47 +170,78 @@ class webSiteSetSerializer(serializers.ModelSerializer):
         model = models.webSiteSet
         fields = "__all__"
 
+
 # 系统权限菜单管理
 class UserSerializer(serializers.ModelSerializer):
+    extuserinfo = serializers.SerializerMethodField()
+
+    def get_extuserinfo(self, obj):
+        return models.userInfo.objects.filter(creator=obj.username).values("phone", "desc").first()
 
     def create(self, validated_data):
-        password = self.initial_data["password"]
-        if "is_staff" in self.initial_data:
-            validated_data.update({"is_staff": self.initial_data["is_staff"]})
-        if "is_active" in self.initial_data:
-            validated_data.update({"is_active": self.initial_data["is_active"]})
-        if "is_superuser" in self.initial_data:
-            validated_data.update({"is_superuser": self.initial_data["is_superuser"]})
-        # 随机密码 仅用于ad域认证
-        if "password" in self.initial_data:
-
-            validated_data.update({"password": make_password(password)})
-        else:
-            validated_data.update({"password": make_password(str(uuid.uuid4()))})
+        if "is_staff" in validated_data:
+            validated_data.update({"is_staff": validated_data["is_staff"]})
+        if "is_active" in validated_data:
+            validated_data.update({"is_active": validated_data["is_active"]})
+        if "is_superuser" in validated_data:
+            validated_data.update({"is_superuser": validated_data["is_superuser"]})
+        # 随机密码
+        password = "admin@123"  # str(random.randint(0,99999999)).zfill(8)
+        validated_data.update({"password": make_password(password)})
         cuser = User.objects.create(**validated_data)
-
         # 添加组
         groupinfo = filter(None, str(self.initial_data["groupinfo"]).split(','))
         for p in groupinfo:
             cuser.groups.add(Group.objects.filter(id=int(p)).first())
-
         # 添加权限
         permissioninfo = filter(None, str(self.initial_data["permissioninfo"]).split(','))
         for p in permissioninfo:
             cuser.user_permissions.add(Permission.objects.filter(id=int(p)).first())
+        # 手机号码 需要验证格式并加密存储
+        phone = self.initial_data["phone"]
+        desc = self.initial_data["desc"]
+        models.userInfo.objects.update_or_create(defaults={"phone": phone, "email": cuser.email, "desc": desc},
+                                                 creator=cuser.username)
 
         return cuser
 
-    # def update(self, instance, validated_data):
-    #     pass
+    # 修改用户信息
+    def update(self, instance, validated_data):
+        if "is_staff" in validated_data:
+            validated_data.update({"is_staff": validated_data["is_staff"]})
+        if "is_active" in validated_data:
+            validated_data.update({"is_active": validated_data["is_active"]})
+        if "is_superuser" in validated_data:
+            validated_data.update({"is_superuser": validated_data["is_superuser"]})
+
+        # 添加组
+        instance.groups.clear()
+        ginfo = self.initial_data["groupinfo"]
+        groupinfo = filter(None, str(ginfo).split(','))
+        for p in groupinfo:
+            instance.groups.add(Group.objects.filter(id=int(p)).first())
+
+        pinfo = self.initial_data["permissioninfo"]
+        instance.user_permissions.clear()
+        permissioninfo = filter(None, str(pinfo).split(','))
+        for p in permissioninfo:
+            instance.user_permissions.add(Permission.objects.filter(id=int(p)).first())
+
+        # 手机号码 需要验证格式并加密存储
+        phone = self.initial_data["phone"]
+        desc = self.initial_data["desc"]
+        models.userInfo.objects.update_or_create(defaults={"phone": phone, "email": instance.email, "desc": desc},
+                                                 creator=instance.username)
+
+        instance.save()
+        return instance
 
     class Meta:
         model = User
         fields = ["id", "username", "first_name", "last_name", "email", "groups", "user_permissions", "is_staff",
                   "is_active",
-                  "is_superuser", "date_joined", "last_login"]
+                  "is_superuser", "date_joined", "last_login", "extuserinfo"]
         depth = 3
-
 
 
 # 系统组菜单管理
@@ -218,6 +253,16 @@ class GroupSerializer(serializers.ModelSerializer):
         for p in permissioninfo:
             objGroup.permissions.add(Permission.objects.filter(id=int(p)).first())
         return objGroup
+
+    def update(self, instance, validated_data):
+        pinfo = self.initial_data["permissioninfo"]
+        instance.permissions.clear()
+        permissioninfo = filter(None, str(pinfo).split(','))
+        for p in permissioninfo:
+            instance.permissions.add(Permission.objects.filter(id=int(p)).first())
+
+        instance.save()
+        return instance
 
     class Meta:
         model = Group
@@ -231,6 +276,7 @@ class ContentTypeSerializer(serializers.ModelSerializer):
         model = ContentType
         fields = '__all__'
         depth = 1
+
 
 class MenuSerializer(serializers.ModelSerializer):
     parent = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -266,14 +312,28 @@ class MenuSerializer(serializers.ModelSerializer):
 
         return objmenu
 
-    # def update(self, instance, validated_data):
-    #     print("instance===", instance)
-    #     instance.save()
-    #     return instance
+    def update(self, instance, validated_data):
+        print("instance===", instance)
+        pinfo = self.initial_data["permissioninfo"]
+        instance.permission.clear()
+        permissioninfo = filter(None, str(pinfo).split(','))
+        for p in permissioninfo:
+            instance.permission.add(Permission.objects.filter(id=int(p)).first())
+
+        # 添加组
+        instance.group.clear()
+        ginfo = self.initial_data["groupinfo"]
+        groupinfo = filter(None, str(ginfo).split(','))
+        for p in groupinfo:
+            instance.group.add(Group.objects.filter(id=int(p)).first())
+
+        instance.save()
+        return instance
 
     class Meta:
         model = models.Menu
-        fields = ["id", "title", "name", "url", "sort", "icon", "parent", "parentmenu", "group", "permission", "desc"]
+        fields = ["id", "title", "url", "sort", "icon", "parent", "parentmenu", "group", "permission", "desc",
+                  "creator", "createTime"]
         depth = 1
 
 
@@ -290,10 +350,19 @@ class PermissionSerializer(serializers.ModelSerializer):
         print(validated_data)
         return Permission.objects.create(**validated_data)
 
+    def update(self, instance, validated_data):
+        p_app_label = self.initial_data["app_label"]
+        p_model = self.initial_data["model_name"]
+        ContentType.objects.update_or_create(defaults={"app_label": p_app_label, "model": p_model},
+                                             id=self.initial_data["content_type_id"])
+        instance.save()
+        return instance
+
     class Meta:
         model = Permission
         fields = '__all__'
         depth = 1
+
 
 # 用户信息实体化
 

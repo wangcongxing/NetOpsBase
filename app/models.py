@@ -18,7 +18,7 @@ class Menu(MPTTModel):
     """
     title = models.CharField(verbose_name='菜单名称', max_length=255, default="", null=True,
                              blank=True, )
-    name = models.CharField(verbose_name='URL别名', max_length=255, unique=True, default="", null=True,
+    name = models.CharField(verbose_name='菜单别名', max_length=255, default=newuuid, null=True,
                             blank=True, )  # unique唯一
     url = models.CharField(verbose_name='含正则的URL', max_length=128, default="", null=True,
                            blank=True, )
@@ -58,10 +58,11 @@ class celeryExtend(models.Model):
     url = models.URLField(verbose_name='URL地址', max_length=255, default="", null=True,
                           blank=True, )
     reqmethod = models.CharField(verbose_name='请求方式', max_length=255, default="", null=True,
-                              blank=True, )
+                                 blank=True, )
     reqheaders = models.TextField(verbose_name='请求头', max_length=50000, default="", null=True,
-                               blank=True, )
-    proxies = models.TextField(verbose_name='请求代理', max_length=50000, default="{'http': None,'https': None,}", null=True,
+                                  blank=True, )
+    proxies = models.TextField(verbose_name='请求代理', max_length=50000, default="{'http': None,'https': None,}",
+                               null=True,
                                blank=True, )
     payload = models.TextField(verbose_name='请求体', max_length=50000, default="", null=True,
                                blank=True, )
@@ -109,7 +110,7 @@ class userInfo(models.Model):
     desc = models.TextField(verbose_name='备注', default="", null=True, blank=True, )
     createTime = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     lastTime = models.DateTimeField(auto_now=True, verbose_name="修改时间")
-    creator = models.CharField(max_length=255, verbose_name="创建者", blank=True, null=True, default="")
+    creator = models.CharField(max_length=255, verbose_name="创建者", unique=True, blank=True, null=True, default="")
     editor = models.CharField(max_length=255, verbose_name="修改者", blank=True, null=True, default="")
 
     class Meta:

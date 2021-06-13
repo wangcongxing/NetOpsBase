@@ -53,7 +53,7 @@ class opsBaseInitDB(APIView):
         # 系统用户
         # User.objects.delete()
         User.objects.update_or_create(
-            defaults={'username': 'admin', 'is_staff': True, 'is_active': True, 'first_name': '管理员',
+            defaults={'username': 'admin', 'is_staff': True, 'is_active': True,'is_superuser':True ,'first_name': '管理员',
                       'password': make_password("admin@123")}, username='admin')
         # 网站设置
         models.webSiteSet.objects.update_or_create(
@@ -166,7 +166,7 @@ class MenuViewSet(CustomViewBase):
             while p:
                 title_list.insert(0, p.title)
                 p = p.parent
-            menus.append({"value": item.id, "title": '>>'.join(title_list)})
+            menus.append({"value": item.id, "title": '/'.join(title_list)})
 
         return APIResponseResult.APIResponse(0, 'ok', results=menus)
 
@@ -242,46 +242,6 @@ class MenuViewSet(CustomViewBase):
         print("listmenu==>", listmenu)
         return APIResponseResult.APIResponse(0, 'success', results=listmenu)
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        res = serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if res:
-            instance.permission.clear()
-            permissioninfo = filter(None, str(request.data["permissioninfo"]).split(','))
-            for p in permissioninfo:
-                instance.permission.add(Permission.objects.filter(id=int(p)).first())
-
-            # 添加组
-            instance.group.clear()
-            groupinfo = filter(None, str(request.data["groupinfo"]).split(','))
-            for p in groupinfo:
-                instance.group.add(Group.objects.filter(id=int(p)).first())
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data,
-                                             http_status=status.HTTP_200_OK, )
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        title = request.data.get("title", None)
-        if title and title != "":
-            queryset = queryset.filter(title__contains=title)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-
 
 class ContentTypeViewSet(CustomViewBase):
     queryset = ContentType.objects.all().order_by('-id')
@@ -292,149 +252,15 @@ class PermissionViewSet(CustomViewBase):
     queryset = Permission.objects.filter(id__gt=28).order_by('-id')
     serializer_class = modelSerializers.PermissionSerializer
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', True)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        res = serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        if res:
-            app_label = request.data["app_label"]
-            model_name = request.data["model_name"]
-            instance.content_type.app_label = app_label
-            instance.content_type.model = model_name
-            instance.content_type.save()
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        name = request.data.get("name", None)
-        if name and name != "":
-            queryset = queryset.filter(name__contains=name)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        with transaction.atomic():
-            try:
-                instance.content_type.delete()
-                self.perform_destroy(instance)
-            except Exception as ex:
-                transaction.rollback()
-                raise ex
-        return APIResponseResult.APIResponse(0, 'success',
-                                             http_status=status.HTTP_200_OK, )
-
 
 class GroupViewSet(CustomViewBase):
     queryset = Group.objects.all().order_by('-id')
     serializer_class = modelSerializers.GroupSerializer
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        res = serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if res:
-            instance.permissions.clear()
-            permissioninfo = filter(None, str(request.data["permissioninfo"]).split(','))
-            for p in permissioninfo:
-                instance.permissions.add(Permission.objects.filter(id=int(p)).first())
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        with transaction.atomic():
-            try:
-                instance.permissions.clear()
-                self.perform_destroy(instance)
-            except Exception as ex:
-                transaction.rollback()
-                raise ex
-        return APIResponseResult.APIResponse(0, 'delete resource success', results=[],
-                                             http_status=status.HTTP_200_OK, )
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        name = request.data.get("name", None)
-        if name and name != "":
-            queryset = queryset.filter(name__contains=name)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
-
 
 class UserViewSet(CustomViewBase):
     queryset = User.objects.all().order_by('-username')
     serializer_class = modelSerializers.UserSerializer
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = User.objects.filter(username=request.data["username"]).first()  # self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        res = serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if res:
-            instance.user_permissions.clear()
-            permissioninfo = filter(None, str(request.data["permissioninfo"]).split(','))
-            for p in permissioninfo:
-                instance.user_permissions.add(Permission.objects.filter(id=int(p)).first())
-
-            # 添加组
-            instance.groups.clear()
-            groupinfo = filter(None, str(request.data["groupinfo"]).split(','))
-            for p in groupinfo:
-                instance.groups.add(Group.objects.filter(id=int(p)).first())
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data,
-                                             http_status=status.HTTP_200_OK, )
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        username = request.data.get("username", None)
-        if username and username != "":
-            queryset = queryset.filter(username__contains=username)
-
-        first_name = request.data.get("first_name", None)
-        if first_name:
-            queryset = queryset.filter(first_name__contains=first_name)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return APIResponseResult.APIResponse(0, 'success', results=serializer.data, http_status=status.HTTP_200_OK, )
 
     # 修改密码
     @action(methods=['put'], detail=False, url_path='resetPassWord')
