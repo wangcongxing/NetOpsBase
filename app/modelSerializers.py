@@ -208,12 +208,11 @@ class UserSerializer(serializers.ModelSerializer):
     # 修改用户信息
     def update(self, instance, validated_data):
         if "is_staff" in validated_data:
-            validated_data.update({"is_staff": validated_data["is_staff"]})
+            instance.is_staff=validated_data["is_staff"]
         if "is_active" in validated_data:
-            validated_data.update({"is_active": validated_data["is_active"]})
+            instance.is_active=validated_data["is_active"]
         if "is_superuser" in validated_data:
-            validated_data.update({"is_superuser": validated_data["is_superuser"]})
-
+            instance.is_superuser=validated_data["is_superuser"]
         # 添加组
         instance.groups.clear()
         ginfo = self.initial_data["groupinfo"]
@@ -314,6 +313,7 @@ class MenuSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         print("instance===", instance)
+        # 添加权限
         pinfo = self.initial_data["permissioninfo"]
         instance.permission.clear()
         permissioninfo = filter(None, str(pinfo).split(','))
@@ -326,6 +326,10 @@ class MenuSerializer(serializers.ModelSerializer):
         groupinfo = filter(None, str(ginfo).split(','))
         for p in groupinfo:
             instance.group.add(Group.objects.filter(id=int(p)).first())
+
+        # 子项继承权限
+
+
 
         instance.save()
         return instance

@@ -1,0 +1,191 @@
+[
+  {
+    "name": "home",
+    "title": "主页",
+    "icon": "layui-icon-home",
+    "sort": 1,
+    "list": [
+      {
+        "name": "console",
+        "title": "控制台",
+        "jump": "/",
+        "sort": 1
+      },
+      {
+        "name": "homepage1",
+        "title": "主页一",
+        "jump": "home/homepage1",
+        "sort": 2
+      },
+      {
+        "name": "homepage2",
+        "title": "主页二",
+        "jump": "home/homepage2",
+        "sort": 3
+      }
+    ]
+  },
+  {
+    "name": "component",
+    "title": "配置管理",
+    "icon": "layui-icon-component",
+    "sort": 2,
+    "list": [
+    ]
+  },
+  {
+    "name": "netcheck",
+    "title": "网络审计",
+    "icon": "layui-icon-auz",
+    "sort": 3,
+    "list": [
+    ]
+  },
+  {
+    "name": "template",
+    "title": "网络探测",
+    "icon": "layui-icon-template",
+    "sort": 4,
+    "list": [
+    ]
+  },
+  {
+    "name": "app",
+    "title": "资产管理",
+    "icon": "layui-icon-app",
+    "sort": 5,
+    "list": [
+    ]
+  },
+  {
+    "name": "busMan",
+    "title": "业务管理",
+    "icon": "layui-icon-template-1",
+    "sort": 6,
+    "list": [
+    ]
+  },
+  {
+    "name": "task",
+    "title": "任务编排",
+    "icon": "layui-icon-read",
+    "sort": 7,
+    "list": [
+    ]
+  },
+  {
+    "name": "loginfo",
+    "title": "报警信息",
+    "icon": "layui-icon-fire",
+    "sort": 8,
+    "list": [
+    ]
+  },
+  {
+    "name": "user",
+    "title": "用户",
+    "icon": "layui-icon-user",
+    "sort": 9,
+    "list": [
+      {
+        "name": "webuser",
+        "title": "网站用户",
+        "jump": "user/user/list",
+        "sort": 1
+      },
+      {
+        "name": "administrators-list",
+        "title": "后台管理员",
+        "jump": "user/administrators/list",
+        "sort": 2
+      },
+      {
+        "name": "administrators-rule",
+        "title": "角色管理",
+        "jump": "user/administrators/role",
+        "sort": 3
+      }
+    ]
+  },
+  {
+    "name": "set",
+    "title": "设置",
+    "icon": "layui-icon-set",
+    "sort": 10,
+    "list": [
+      {
+        "name": "system",
+        "title": "系统设置",
+        "spread": true,
+        "sort": 1,
+        "list": [
+          {
+            "name": "website",
+            "title": "网站设置",
+            "jump": "set/system/website",
+            "sort": 1
+          },
+          {
+            "name": "menus",
+            "title": "菜单管理",
+            "jump": "set/menus/menulist",
+            "sort": 2
+          },
+          {
+            "name": "taskwork",
+            "title": "定时任务",
+            "jump": "set/taskwork/tasklist",
+            "sort": 3
+          }
+        ]
+      },
+      {
+        "name": "auth",
+        "title": "权限设置",
+        "spread": true,
+        "sort": 2,
+        "list": [
+          {
+            "name": "permissionGroup",
+            "title": "权限",
+            "jump": "set/auth/permission",
+            "sort": 1
+          },
+          {
+            "name": "permissionGroup",
+            "title": "权限组",
+            "jump": "set/auth/group",
+            "sort": 2
+          }
+        ]
+      },
+      {
+        "name": "mysettings",
+        "title": "我的设置",
+        "spread": true,
+        "sort": 3,
+        "list": [
+          {
+            "name": "info",
+            "title": "基本资料",
+            "jump": "set/user/info",
+            "sort": 1
+          },
+          {
+            "name": "password",
+            "title": "修改密码",
+            "jump": "set/user/password",
+            "sort": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "get",
+    "title": "关于",
+    "icon": "layui-icon-auz",
+    "jump": "system/about",
+    "sort": 11
+  }
+]

@@ -6,7 +6,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from app import models, modelFilters, modelSerializers,modelPermission
+from app import models, modelFilters, modelSerializers, modelPermission
 from utils import APIResponseResult
 from utils.CustomViewBase import CustomViewBase
 from django.contrib.auth.models import User, Group, Permission
@@ -25,6 +25,8 @@ from datetime import datetime, timedelta
 from django.db import transaction
 from rest_framework import generics, mixins, views, viewsets
 from django_filters import rest_framework as filters
+import ast
+
 # Create your views here.
 
 # webSiteSet userInfo 只留下put方法
@@ -50,10 +52,53 @@ class opsBaseInitDB(APIView):
     permission_classes = ()
 
     def get(self, request, *args, **kwargs):
+        # 初始化菜单 可考虑递归
+        menujson = []
+        with open(os.path.join(config.BASE_DIR, 'initConf', "menu.json"), "r") as f:
+            menujson = json.load(f)
+            print(menujson)
+        for pitem in menujson:
+            pname = pitem["name"]
+            ptitle = pitem["title"]
+            picon = pitem["icon"]
+            psort = pitem["sort"]
+            jump = pitem["jump"] if "jump" in pitem.keys() else ""
+
+            plist = pitem["list"] if "list" in pitem.keys() else []
+            pm, pc = models.Menu.objects.update_or_create(
+                defaults={"name": pname, "title": ptitle, "icon": picon, "sort": psort, "url": jump,
+                          'creator': 'admin',
+                          'editor': 'admin'},
+                name=pname)
+            for citem in plist:
+                cname = citem["name"]
+                ctitle = citem["title"]
+                cjump = citem["jump"] if "jump" in citem.keys() else ""
+                clist = citem["list"] if "list" in citem.keys() else []
+                csort = citem["sort"]
+                cm, cc = models.Menu.objects.update_or_create(
+                    defaults={"name": cname, "title": ctitle, "parent": pm, "url": cjump, "sort": csort,
+                              'creator': 'admin', 'editor': 'admin'},
+                    name=cname)
+                for ccitem in clist:
+                    ccname = ccitem["name"]
+                    cctitle = ccitem["title"]
+                    ccjump = ccitem["jump"]
+                    ccsort = ccitem["sort"]
+                    ccm, cc = models.Menu.objects.update_or_create(
+                        defaults={"name": ccname, "title": cctitle, "parent": cm, "url": ccjump, "sort": ccsort,
+                                  'creator': 'admin', 'editor': 'admin'},
+                        name=ccname)
+
+        # 权限组
+        permissionGroup = ["超级管理员", "管理员", "纠错员", "采购员", "运营人员", "编辑员", "安全员", "网络组", "巡检员", "监控组", ]
+        for gname in permissionGroup:
+            models.Group.objects.update_or_create(defaults={"name": gname}, name=gname)
         # 系统用户
         # User.objects.delete()
         User.objects.update_or_create(
-            defaults={'username': 'admin', 'is_staff': True, 'is_active': True,'is_superuser':True ,'first_name': '管理员',
+            defaults={'username': 'admin', 'is_staff': True, 'is_active': True, 'is_superuser': True,
+                      'first_name': '管理员',
                       'password': make_password("admin@123")}, username='admin')
         # 网站设置
         models.webSiteSet.objects.update_or_create(
@@ -152,7 +197,7 @@ class CheckAuthUserAPIView(APIView):
 
 # 系统左侧菜单管理
 class MenuViewSet(CustomViewBase):
-    queryset = models.Menu.objects.all().order_by('-id')
+    queryset = models.Menu.objects.all().order_by('sort')
     serializer_class = modelSerializers.MenuSerializer
 
     # 返回菜单上下级关系
@@ -184,31 +229,34 @@ class MenuViewSet(CustomViewBase):
         print("current_url>", current_url)
         print(username)
         # 当前用户的权限
-        currentUser = User.objects.filter(username=username).first()
-        user_permission_id = []
-        group_permission_id = []
-        current_user_group = Group.objects.filter(user__username=currentUser)
-        print("current_group_set", current_user_group)
-        current_user_permissions = Permission.objects.filter(user__username=currentUser)
-        print("current_user_permissions", current_user_permissions)
-        print("get_user_permissions>", currentUser.get_user_permissions())
-        print("get_group_permissions>", currentUser.get_group_permissions())
-        for up in current_user_group:
-            group_permission_id.append(up.id)
-        for gp in current_user_permissions:
-            user_permission_id.append(gp.id)
-        print("user_permission_id", user_permission_id)
-        print("group_permission_id", group_permission_id)
         # 绑定一级菜单
         leftmenu = {}
         firstmenus = models.Menu.objects.filter(parent=None).order_by('sort')
         for fmenu in firstmenus:
             leftmenu.update(
                 {fmenu.name: {"title": fmenu.title, "icon": "layui-icon-home", "sort": fmenu.sort, "list": []}})
-        # 查询可以操作的菜单
-        menus = models.Menu.objects.filter(Q(group__id__in=group_permission_id) |
-                                           Q(permission__id__in=user_permission_id),
-                                           parent__isnull=False).distinct().order_by('sort')
+        currentUser = User.objects.filter(username=username).first()
+        if currentUser.is_superuser:
+            menus = models.Menu.objects.all().distinct().order_by('sort')
+        else:
+            user_permission_id = []
+            group_permission_id = []
+            current_user_group = Group.objects.filter(user__username=currentUser)
+            print("current_group_set", current_user_group)
+            current_user_permissions = Permission.objects.filter(user__username=currentUser)
+            print("current_user_permissions", current_user_permissions)
+            print("get_user_permissions>", currentUser.get_user_permissions())
+            print("get_group_permissions>", currentUser.get_group_permissions())
+            for up in current_user_group:
+                group_permission_id.append(up.id)
+            for gp in current_user_permissions:
+                user_permission_id.append(gp.id)
+            print("user_permission_id", user_permission_id)
+            print("group_permission_id", group_permission_id)
+
+            # 查询可以操作的菜单 parent__isnull=False
+            menus = models.Menu.objects.filter(Q(group__id__in=group_permission_id) |
+                                               Q(permission__id__in=user_permission_id), ).distinct().order_by('sort')
         # print(menus.query)
         print("menus", len(menus))
         for item in menus:
@@ -217,7 +265,8 @@ class MenuViewSet(CustomViewBase):
             children = item.get_children()
             print("children==", children)
             for cmenu in children:
-                children_menu_list.append({"name": cmenu.name, "title": cmenu.title, "jump": cmenu.url})
+                children_menu_list.append(
+                    {cmenu.name: {"name": cmenu.name, "title": cmenu.title, "jump": cmenu.url, "list": []}})
             print(children_menu_list)
             # 根据子权限获取父级菜单名称
             p = item.parent
@@ -225,13 +274,23 @@ class MenuViewSet(CustomViewBase):
                 # caption_list.append(p.caption)
                 print("p.title", p.title)
                 if p.name in leftmenu:
-                    children_menu_list.append({"name": item.name, "title": item.title, "jump": item.url})
+                    children_menu_list.append(
+                        {item.name: {"name": item.name, "title": item.title, "jump": item.url, "list": []}})
                 # 可实现递归获取,如有需要可自行扩展
                 p = p.parent
             if item.parent is None:
                 leftmenu.get(item.name)["list"] = children_menu_list
             else:
-                leftmenu.get(item.parent.name)["list"] += children_menu_list
+                print("leftmenu=", leftmenu)
+                print("item.parent.name=", item.parent.name)
+                if item.parent.name in leftmenu.keys():
+                    leftmenu.get(item.parent.name)["list"] += children_menu_list
+                else:
+                    if item.parent.name in leftmenu.keys():
+                        leftmenu.get(item.parent.name)["list"] += children_menu_list
+                    else:
+                        pass
+                        #leftmenu.get(item.parent.parent.name)["list"][3][item.parent.name]["list"] += children_menu_list
 
         listmenu = []
         for key, value in leftmenu.items():
@@ -244,17 +303,17 @@ class MenuViewSet(CustomViewBase):
 
 
 class ContentTypeViewSet(CustomViewBase):
-    queryset = ContentType.objects.all().order_by('-id')
+    queryset = ContentType.objects.all().order_by('id')
     serializer_class = modelSerializers.ContentTypeSerializer
 
 
 class PermissionViewSet(CustomViewBase):
-    queryset = Permission.objects.filter(id__gt=28).order_by('-id')
+    queryset = Permission.objects.all().order_by('id')
     serializer_class = modelSerializers.PermissionSerializer
 
 
 class GroupViewSet(CustomViewBase):
-    queryset = Group.objects.all().order_by('-id')
+    queryset = Group.objects.all().order_by('id')
     serializer_class = modelSerializers.GroupSerializer
 
 
@@ -291,7 +350,7 @@ class UserViewSet(CustomViewBase):
 class PeriodicTaskViewSet(CustomViewBase):
     queryset = PeriodicTask.objects.all().order_by('-id')
     serializer_class = modelSerializers.PeriodicTaskSerializer
-    filter_class =modelFilters.PeriodicTaskFilter
+    filter_class = modelFilters.PeriodicTaskFilter
     ordering_fields = ('id', 'expires')  # 排序
     permission_classes = [modelPermission.PeriodicTaskPermission]
 
