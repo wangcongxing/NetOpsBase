@@ -9,6 +9,9 @@ import ast
 
 print(ast.literal_eval("{'http': None,'https': None,}"))
 
+
+
+
 menu = [{"name": "home", 'title': '主页', 'icon': 'layui-icon-home',
          'list': [{'name': 'console', 'title': '控制台', 'jump': '/'},
                   {'name': 'homepage1', 'title': '主页一', 'jump': 'home/homepage1'},

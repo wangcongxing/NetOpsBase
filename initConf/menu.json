@@ -26,34 +26,44 @@
     ]
   },
   {
-    "name": "component",
+    "name": "configurationManagement",
     "title": "配置管理",
     "icon": "layui-icon-component",
     "sort": 2,
+    "jump": "template/tips/error",
     "list": [
     ]
   },
   {
-    "name": "netcheck",
+    "name": "networkAudit",
     "title": "网络审计",
     "icon": "layui-icon-auz",
     "sort": 3,
+    "jump": "template/tips/error",
     "list": [
     ]
   },
   {
-    "name": "template",
+    "name": "networkDetection",
     "title": "网络探测",
     "icon": "layui-icon-template",
     "sort": 4,
+    "jump": "template/tips/error",
     "list": [
+      {
+        "name": "NetworkTopology",
+        "title": "网络拓扑",
+        "jump": "template/tips/error",
+        "sort": 1
+      }
     ]
   },
   {
-    "name": "app",
+    "name": "assetManagement",
     "title": "资产管理",
     "icon": "layui-icon-app",
     "sort": 5,
+    "jump": "template/tips/error",
     "list": [
     ]
   },
@@ -62,14 +72,16 @@
     "title": "业务管理",
     "icon": "layui-icon-template-1",
     "sort": 6,
+    "jump": "template/tips/error",
     "list": [
     ]
   },
   {
-    "name": "task",
+    "name": "taskScheduling",
     "title": "任务编排",
     "icon": "layui-icon-read",
     "sort": 7,
+    "jump": "template/tips/error",
     "list": [
     ]
   },
@@ -78,14 +90,56 @@
     "title": "报警信息",
     "icon": "layui-icon-fire",
     "sort": 8,
+    "jump": "template/tips/error",
     "list": [
+    ]
+  },
+  {
+    "name": "timedTask",
+    "title": "定时任务",
+    "icon": "layui-icon-set",
+    "sort": 9,
+    "list": [
+      {
+        "name": "tasklist",
+        "title": "定时列表",
+        "jump": "set/taskwork/tasklist",
+        "sort": 1
+      },
+      {
+        "name": "tasklogs",
+        "title": "任务日志",
+        "jump": "template/tips/error",
+        "sort": 2
+      }
+    ]
+  },
+  {
+    "name": "MonitoringAlarm",
+    "title": "监控报警",
+    "icon": "layui-icon-auz",
+    "jump": "system/about",
+    "sort": 10,
+    "list": [
+      {
+        "name": "ZABBIX",
+        "title": "ZABBIX",
+        "jump": "template/tips/error",
+        "sort": 1
+      },
+      {
+        "name": "Prometheus",
+        "title": "Prometheus",
+        "jump": "template/tips/error",
+        "sort": 2
+      }
     ]
   },
   {
     "name": "user",
     "title": "用户",
     "icon": "layui-icon-user",
-    "sort": 9,
+    "sort": 11,
     "list": [
       {
         "name": "webuser",
@@ -111,7 +165,7 @@
     "name": "set",
     "title": "设置",
     "icon": "layui-icon-set",
-    "sort": 10,
+    "sort": 12,
     "list": [
       {
         "name": "system",
@@ -130,12 +184,6 @@
             "title": "菜单管理",
             "jump": "set/menus/menulist",
             "sort": 2
-          },
-          {
-            "name": "taskwork",
-            "title": "定时任务",
-            "jump": "set/taskwork/tasklist",
-            "sort": 3
           }
         ]
       },
@@ -146,7 +194,7 @@
         "sort": 2,
         "list": [
           {
-            "name": "permissionGroup",
+            "name": "permission",
             "title": "权限",
             "jump": "set/auth/permission",
             "sort": 1
@@ -186,6 +234,6 @@
     "title": "关于",
     "icon": "layui-icon-auz",
     "jump": "system/about",
-    "sort": 11
+    "sort": 13
   }
 ]

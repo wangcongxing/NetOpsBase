@@ -196,6 +196,18 @@ class CheckAuthUserAPIView(APIView):
 
 
 # 系统左侧菜单管理
+
+def get_child_menu(childs):
+    children = []
+    if childs:
+        for child in childs:
+            data = {"name": child.name, "title": child.title, "icon": child.icon, "jump": child.url, "list": []}
+            _childs = models.Menu.objects.filter(parent=child)
+            if _childs:
+                data["list"] = get_child_menu(_childs)
+            children.append(data)
+    return children
+
 class MenuViewSet(CustomViewBase):
     queryset = models.Menu.objects.all().order_by('sort')
     serializer_class = modelSerializers.MenuSerializer
@@ -219,25 +231,14 @@ class MenuViewSet(CustomViewBase):
     @action(methods=['get', 'post'], detail=False, url_path='left_menu')
     def left_menu(self, request, *args, **kwargs):
         # 获得用户权限
-        print(request.user)
-        print(type(request.user))
         if type(request.user) == dict:
             username = request.user["username"]
         else:
             username = request.user.username
-        current_url = request.path_info
-        print("current_url>", current_url)
-        print(username)
-        # 当前用户的权限
-        # 绑定一级菜单
-        leftmenu = {}
-        firstmenus = models.Menu.objects.filter(parent=None).order_by('sort')
-        for fmenu in firstmenus:
-            leftmenu.update(
-                {fmenu.name: {"title": fmenu.title, "icon": "layui-icon-home", "sort": fmenu.sort, "list": []}})
+        tree = []
         currentUser = User.objects.filter(username=username).first()
         if currentUser.is_superuser:
-            menus = models.Menu.objects.all().distinct().order_by('sort')
+            firstmenus = models.Menu.objects.filter(parent=None).order_by('sort')
         else:
             user_permission_id = []
             group_permission_id = []
@@ -253,53 +254,19 @@ class MenuViewSet(CustomViewBase):
                 user_permission_id.append(gp.id)
             print("user_permission_id", user_permission_id)
             print("group_permission_id", group_permission_id)
-
-            # 查询可以操作的菜单 parent__isnull=False
-            menus = models.Menu.objects.filter(Q(group__id__in=group_permission_id) |
-                                               Q(permission__id__in=user_permission_id), ).distinct().order_by('sort')
+            # 查询可以操作的菜单
+            firstmenus = models.Menu.objects.filter(Q(group__id__in=group_permission_id) |
+                                                    Q(permission__id__in=user_permission_id),
+                                                    parent=None).distinct().order_by('sort')
         # print(menus.query)
-        print("menus", len(menus))
-        for item in menus:
-            print("item.title", item.title)
-            children_menu_list = []
-            children = item.get_children()
-            print("children==", children)
-            for cmenu in children:
-                children_menu_list.append(
-                    {cmenu.name: {"name": cmenu.name, "title": cmenu.title, "jump": cmenu.url, "list": []}})
-            print(children_menu_list)
-            # 根据子权限获取父级菜单名称
-            p = item.parent
-            while p:
-                # caption_list.append(p.caption)
-                print("p.title", p.title)
-                if p.name in leftmenu:
-                    children_menu_list.append(
-                        {item.name: {"name": item.name, "title": item.title, "jump": item.url, "list": []}})
-                # 可实现递归获取,如有需要可自行扩展
-                p = p.parent
-            if item.parent is None:
-                leftmenu.get(item.name)["list"] = children_menu_list
-            else:
-                print("leftmenu=", leftmenu)
-                print("item.parent.name=", item.parent.name)
-                if item.parent.name in leftmenu.keys():
-                    leftmenu.get(item.parent.name)["list"] += children_menu_list
-                else:
-                    if item.parent.name in leftmenu.keys():
-                        leftmenu.get(item.parent.name)["list"] += children_menu_list
-                    else:
-                        pass
-                        #leftmenu.get(item.parent.parent.name)["list"][3][item.parent.name]["list"] += children_menu_list
-
-        listmenu = []
-        for key, value in leftmenu.items():
-            if len(value["list"]):
-                listmenu.append(value)
-
-        print("leftmenu==>", leftmenu)
-        print("listmenu==>", listmenu)
-        return APIResponseResult.APIResponse(0, 'success', results=listmenu)
+        for menu in firstmenus:
+            menu_data = {"name": menu.name, "title": menu.title, "icon": menu.icon, "jump": menu.url}
+            childs = models.Menu.objects.filter(parent=menu).order_by('sort')
+            if childs:
+                menu_data["list"] = get_child_menu(childs)
+            tree.append(menu_data)
+        # tree = [x for x in tree if x["list"] != []]
+        return APIResponseResult.APIResponse(0, 'success', results=tree)
 
 
 class ContentTypeViewSet(CustomViewBase):
