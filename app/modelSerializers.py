@@ -200,19 +200,20 @@ class UserSerializer(serializers.ModelSerializer):
         # 手机号码 需要验证格式并加密存储
         phone = self.initial_data["phone"]
         desc = self.initial_data["desc"]
-        models.userInfo.objects.update_or_create(defaults={"phone": phone, "email": cuser.email, "desc": desc},
-                                                 creator=cuser.username)
+        models.userInfo.objects.update_or_create(
+            defaults={"nickName": cuser.get_full_name(), "phone": phone, "email": cuser.email, "desc": desc},
+            creator=cuser.username)
 
         return cuser
 
     # 修改用户信息
     def update(self, instance, validated_data):
         if "is_staff" in validated_data:
-            instance.is_staff=validated_data["is_staff"]
+            instance.is_staff = validated_data["is_staff"]
         if "is_active" in validated_data:
-            instance.is_active=validated_data["is_active"]
+            instance.is_active = validated_data["is_active"]
         if "is_superuser" in validated_data:
-            instance.is_superuser=validated_data["is_superuser"]
+            instance.is_superuser = validated_data["is_superuser"]
         # 添加组
         instance.groups.clear()
         ginfo = self.initial_data["groupinfo"]
@@ -225,15 +226,14 @@ class UserSerializer(serializers.ModelSerializer):
         permissioninfo = filter(None, str(pinfo).split(','))
         for p in permissioninfo:
             instance.user_permissions.add(Permission.objects.filter(id=int(p)).first())
-
+        obj = super().update(instance, validated_data)
         # 手机号码 需要验证格式并加密存储
         phone = self.initial_data["phone"]
         desc = self.initial_data["desc"]
-        models.userInfo.objects.update_or_create(defaults={"phone": phone, "email": instance.email, "desc": desc},
-                                                 creator=instance.username)
-
-        instance.save()
-        return instance
+        models.userInfo.objects.update_or_create(
+            defaults={"nickName": instance.get_full_name(), "phone": phone, "email": instance.email, "desc": desc},
+            creator=instance.username)
+        return obj
 
     class Meta:
         model = User
@@ -260,8 +260,8 @@ class GroupSerializer(serializers.ModelSerializer):
         for p in permissioninfo:
             instance.permissions.add(Permission.objects.filter(id=int(p)).first())
 
-        instance.save()
-        return instance
+        obj = super().update(instance, validated_data)
+        return obj
 
     class Meta:
         model = Group
@@ -326,13 +326,8 @@ class MenuSerializer(serializers.ModelSerializer):
         groupinfo = filter(None, str(ginfo).split(','))
         for p in groupinfo:
             instance.group.add(Group.objects.filter(id=int(p)).first())
-
-        # 子项继承权限
-
-
-
-        instance.save()
-        return instance
+        obj = super().update(instance, validated_data)
+        return obj
 
     class Meta:
         model = models.Menu
@@ -359,8 +354,8 @@ class PermissionSerializer(serializers.ModelSerializer):
         p_model = self.initial_data["model_name"]
         ContentType.objects.update_or_create(defaults={"app_label": p_app_label, "model": p_model},
                                              id=self.initial_data["content_type_id"])
-        instance.save()
-        return instance
+        obj = super().update(instance, validated_data)
+        return obj
 
     class Meta:
         model = Permission
@@ -373,5 +368,5 @@ class PermissionSerializer(serializers.ModelSerializer):
 class userInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.userInfo
-        fields = ["openid", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime", "lastTime", "creator",
+        fields = ["openid", "creator", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime", "lastTime",
                   "editor"]

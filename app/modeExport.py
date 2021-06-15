@@ -80,7 +80,8 @@ class userInfoExport(XLSXFileMixin, ReadOnlyModelViewSet):
     column_header = {
         'titles': [
             "openid",
-            "昵称",
+            "账号",
+            "姓名",
             "性别",
             "头像",
             "手机",
@@ -88,7 +89,6 @@ class userInfoExport(XLSXFileMixin, ReadOnlyModelViewSet):
             "备注",
             "创建时间",
             "修改时间",
-            "创建者",
             "修改者"
         ],
         'column_width': [30, 30, 30, 40, 40, 40, 50, 50, 50, 55, 55, ],

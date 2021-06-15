@@ -30,7 +30,7 @@
     "title": "配置管理",
     "icon": "layui-icon-component",
     "sort": 2,
-    "jump": "template/tips/error",
+    "jump": "configurationManagement/list",
     "list": [
     ]
   },
@@ -39,21 +39,20 @@
     "title": "网络审计",
     "icon": "layui-icon-auz",
     "sort": 3,
-    "jump": "template/tips/error",
+    "jump": "networkAudit/list",
     "list": [
     ]
   },
   {
     "name": "networkDetection",
     "title": "网络探测",
-    "icon": "layui-icon-template",
+    "icon": "layui-icon-voice",
     "sort": 4,
-    "jump": "template/tips/error",
     "list": [
       {
         "name": "NetworkTopology",
         "title": "网络拓扑",
-        "jump": "template/tips/error",
+        "jump": "networkDetection/NetworkTopology",
         "sort": 1
       }
     ]
@@ -63,7 +62,7 @@
     "title": "资产管理",
     "icon": "layui-icon-app",
     "sort": 5,
-    "jump": "template/tips/error",
+    "jump": "assetManagement/networkAssets",
     "list": [
     ]
   },
@@ -72,7 +71,7 @@
     "title": "业务管理",
     "icon": "layui-icon-template-1",
     "sort": 6,
-    "jump": "template/tips/error",
+    "jump": "busMan/list",
     "list": [
     ]
   },
@@ -81,35 +80,26 @@
     "title": "任务编排",
     "icon": "layui-icon-read",
     "sort": 7,
-    "jump": "template/tips/error",
-    "list": [
-    ]
-  },
-  {
-    "name": "loginfo",
-    "title": "报警信息",
-    "icon": "layui-icon-fire",
-    "sort": 8,
-    "jump": "template/tips/error",
+    "jump": "taskScheduling/list",
     "list": [
     ]
   },
   {
     "name": "timedTask",
     "title": "定时任务",
-    "icon": "layui-icon-set",
+    "icon": "layui-icon-find-fill",
     "sort": 9,
     "list": [
       {
         "name": "tasklist",
         "title": "定时列表",
-        "jump": "set/taskwork/tasklist",
+        "jump": "timedTask/tasklist",
         "sort": 1
       },
       {
         "name": "tasklogs",
         "title": "任务日志",
-        "jump": "template/tips/error",
+        "jump": "timedTask/tasklogs",
         "sort": 2
       }
     ]
@@ -117,21 +107,35 @@
   {
     "name": "MonitoringAlarm",
     "title": "监控报警",
-    "icon": "layui-icon-auz",
+    "icon": "layui-icon-fire",
     "jump": "system/about",
     "sort": 10,
     "list": [
       {
         "name": "ZABBIX",
         "title": "ZABBIX",
-        "jump": "template/tips/error",
+        "jump": "MonitoringAlarm/ZABBIX",
         "sort": 1
       },
       {
         "name": "Prometheus",
         "title": "Prometheus",
-        "jump": "template/tips/error",
+        "jump": "MonitoringAlarm/Prometheus",
         "sort": 2
+      }
+    ]
+  },
+  {
+    "name": "omt",
+    "title": "运维工具",
+    "icon": "layui-icon-util",
+    "sort": 11,
+    "list": [
+      {
+        "name": "Builder",
+        "title": "脚本生成器",
+        "jump": "omt/builderCMD",
+        "sort": 1
       }
     ]
   },
@@ -139,7 +143,7 @@
     "name": "user",
     "title": "用户",
     "icon": "layui-icon-user",
-    "sort": 11,
+    "sort": 12,
     "list": [
       {
         "name": "webuser",
@@ -148,16 +152,10 @@
         "sort": 1
       },
       {
-        "name": "administrators-list",
-        "title": "后台管理员",
-        "jump": "user/administrators/list",
-        "sort": 2
-      },
-      {
         "name": "administrators-rule",
         "title": "角色管理",
         "jump": "user/administrators/role",
-        "sort": 3
+        "sort": 2
       }
     ]
   },
@@ -165,7 +163,7 @@
     "name": "set",
     "title": "设置",
     "icon": "layui-icon-set",
-    "sort": 12,
+    "sort": 13,
     "list": [
       {
         "name": "system",
@@ -234,6 +232,6 @@
     "title": "关于",
     "icon": "layui-icon-auz",
     "jump": "system/about",
-    "sort": 13
+    "sort": 14
   }
 ]

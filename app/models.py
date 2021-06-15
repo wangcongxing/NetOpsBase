@@ -102,7 +102,7 @@ class webSiteSet(models.Model):
 # 基本资料
 class userInfo(models.Model):
     openid = models.CharField(verbose_name='openid', max_length=255, default="", null=True, blank=True, )
-    nickName = models.CharField(verbose_name='昵称', max_length=255, default="", null=True, blank=True, )
+    nickName = models.CharField(verbose_name='姓名', max_length=255, default="", null=True, blank=True, )
     sex = models.CharField(verbose_name='性别', max_length=255, default="", null=True, blank=True, )
     avatar = models.ImageField(verbose_name='头像', max_length=255, default="", null=True, blank=True, )
     phone = models.CharField(verbose_name='手机', max_length=255, default="", null=True, blank=True, )

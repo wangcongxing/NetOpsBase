@@ -208,6 +208,7 @@ def get_child_menu(childs):
             children.append(data)
     return children
 
+
 class MenuViewSet(CustomViewBase):
     queryset = models.Menu.objects.all().order_by('sort')
     serializer_class = modelSerializers.MenuSerializer
@@ -287,6 +288,8 @@ class GroupViewSet(CustomViewBase):
 class UserViewSet(CustomViewBase):
     queryset = User.objects.all().order_by('-username')
     serializer_class = modelSerializers.UserSerializer
+    filter_class = modelFilters.UserFilter
+    ordering_fields = ('id', 'date_joined')  # 排序
 
     # 修改密码
     @action(methods=['put'], detail=False, url_path='resetPassWord')
