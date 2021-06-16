@@ -356,13 +356,13 @@ class userInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.G
             username = request.user["username"]
         else:
             username = request.user.username
-
+        currentUser = User.objects.filter(username=username).first()
         obj = models.userInfo.objects.filter(creator=username).first()
         if obj is None:
-            obju, created = models.userInfo.objects.update_or_create(
-                defaults={"user": obj, "nickName": obj.get_full_name(), "email": obj.email,
-                          'creator': obj.username, 'editor': obj.username},
-                user=obj)
+            obj, created = models.userInfo.objects.update_or_create(
+                defaults={"user": currentUser, "nickName": currentUser.get_full_name(), "email": currentUser.email,
+                          'creator': currentUser.username, 'editor': currentUser.username},
+                user=currentUser)
 
         results = {}
         results.update({"id": obj.id})
