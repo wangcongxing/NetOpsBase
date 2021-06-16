@@ -89,6 +89,7 @@ class userInfoExport(XLSXFileMixin, ReadOnlyModelViewSet):
             "备注",
             "创建时间",
             "修改时间",
+            "创建者",
             "修改者"
         ],
         'column_width': [30, 30, 30, 40, 40, 40, 50, 50, 50, 55, 55, ],

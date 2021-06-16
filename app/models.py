@@ -101,6 +101,7 @@ class webSiteSet(models.Model):
 
 # 基本资料
 class userInfo(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="用户")
     openid = models.CharField(verbose_name='openid', max_length=255, default="", null=True, blank=True, )
     nickName = models.CharField(verbose_name='姓名', max_length=255, default="", null=True, blank=True, )
     sex = models.CharField(verbose_name='性别', max_length=255, default="", null=True, blank=True, )
@@ -112,6 +113,9 @@ class userInfo(models.Model):
     lastTime = models.DateTimeField(auto_now=True, verbose_name="修改时间")
     creator = models.CharField(max_length=255, verbose_name="创建者", unique=True, blank=True, null=True, default="")
     editor = models.CharField(max_length=255, verbose_name="修改者", blank=True, null=True, default="")
+
+    def get_username(self):
+        return self.user.username
 
     class Meta:
         verbose_name = verbose_name_plural = '用户信息'

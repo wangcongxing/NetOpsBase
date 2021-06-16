@@ -201,8 +201,9 @@ class UserSerializer(serializers.ModelSerializer):
         phone = self.initial_data["phone"]
         desc = self.initial_data["desc"]
         models.userInfo.objects.update_or_create(
-            defaults={"nickName": cuser.get_full_name(), "phone": phone, "email": cuser.email, "desc": desc},
-            creator=cuser.username)
+            defaults={"user": cuser, "nickName": cuser.get_full_name(), "phone": phone, "email": cuser.email,
+                      "desc": desc, 'creator': cuser.username, 'editor': cuser.username},
+            user=cuser)
 
         return cuser
 
@@ -231,8 +232,8 @@ class UserSerializer(serializers.ModelSerializer):
         phone = self.initial_data["phone"]
         desc = self.initial_data["desc"]
         models.userInfo.objects.update_or_create(
-            defaults={"nickName": instance.get_full_name(), "phone": phone, "email": instance.email, "desc": desc},
-            creator=instance.username)
+            defaults={"nickName": instance.get_full_name(), "phone": phone, "email": instance.email, "desc": desc, 'editor': instance.username},
+            user=instance)
         return obj
 
     class Meta:
@@ -368,5 +369,5 @@ class PermissionSerializer(serializers.ModelSerializer):
 class userInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.userInfo
-        fields = ["openid", "creator", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime", "lastTime",
-                  "editor"]
+        fields = ["openid", "get_username", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime", "lastTime",
+                  "creator","editor"]
