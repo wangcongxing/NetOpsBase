@@ -52,6 +52,11 @@ class opsBaseInitDB(APIView):
     permission_classes = ()
 
     def get(self, request, *args, **kwargs):
+        # 新建超级用户
+        superUser, ctime = User.objects.update_or_create(
+            defaults={'username': 'admin', 'is_staff': True, 'is_active': True, 'is_superuser': True,
+                      'first_name': '管理员',
+                      'password': make_password("admin@123")}, username='admin')
         # 初始化菜单 可考虑递归
         menujson = []
         with open(os.path.join(config.BASE_DIR, 'initConf', "menu.json"), "r") as f:
@@ -67,8 +72,8 @@ class opsBaseInitDB(APIView):
             plist = pitem["list"] if "list" in pitem.keys() else []
             pm, pc = models.Menu.objects.update_or_create(
                 defaults={"name": pname, "title": ptitle, "icon": picon, "sort": psort, "url": jump,
-                          'creator': 'admin',
-                          'editor': 'admin'},
+                          'creator': superUser,
+                          'editor': superUser},
                 name=pname)
             for citem in plist:
                 cname = citem["name"]
@@ -78,7 +83,7 @@ class opsBaseInitDB(APIView):
                 csort = citem["sort"]
                 cm, cc = models.Menu.objects.update_or_create(
                     defaults={"name": cname, "title": ctitle, "parent": pm, "url": cjump, "sort": csort,
-                              'creator': 'admin', 'editor': 'admin'},
+                              'creator': superUser, 'editor': superUser},
                     name=cname)
                 for ccitem in clist:
                     ccname = ccitem["name"]
@@ -87,25 +92,19 @@ class opsBaseInitDB(APIView):
                     ccsort = ccitem["sort"]
                     ccm, cc = models.Menu.objects.update_or_create(
                         defaults={"name": ccname, "title": cctitle, "parent": cm, "url": ccjump, "sort": ccsort,
-                                  'creator': 'admin', 'editor': 'admin'},
+                                  'creator': superUser, 'editor': superUser},
                         name=ccname)
 
         # 权限组
         permissionGroup = ["超级管理员", "管理员", "纠错员", "采购员", "运营人员", "编辑员", "安全员", "网络组", "巡检员", "监控组", ]
         for gname in permissionGroup:
             models.Group.objects.update_or_create(defaults={"name": gname}, name=gname)
-        # 系统用户
-        # User.objects.delete()
-        User.objects.update_or_create(
-            defaults={'username': 'admin', 'is_staff': True, 'is_active': True, 'is_superuser': True,
-                      'first_name': '管理员',
-                      'password': make_password("admin@123")}, username='admin')
         # 网站设置
         models.webSiteSet.objects.update_or_create(
             defaults={'webName': "网络自动化", 'webUrl': 'http://www.netops.com', 'cacheTime': 10, 'uploadFileSize': 1024,
                       'fileExt': 'png|gif|jpg|jpeg|zip|rar', 'homeTitle': '网络自动化', 'META': 'H3c,huawei,ops,net,自动化',
                       'METADESC': 'NetOps 网络自动化系统解决方案，采用前后端分离开发模式 是目前非常流行的后台模板框架，广泛用于各类管理平台。',
-                      'license': '© 2018 netops.com MIT license', 'creator': 'admin', 'editor': 'admin'}, id=1)
+                      'license': '© 2018 netops.com MIT license', 'creator': superUser, 'editor': superUser}, id=1)
 
         # 调度任务
         # 创建10秒的间隔 interval 对象
@@ -133,8 +132,8 @@ class opsBaseInitDB(APIView):
                       'url': 'http://127.0.0.1:7000/opsbase/app/opsBaseInit', 'reqmethod': 'GET',
                       'reqheaders': "{'Content-Type': 'application/json'}",
                       'proxies': "{'http': None,'https': None,}",
-                      'payload': {}, 'phone': '19865875737', 'email': '2256807897@qq.com', 'creator': 'admin',
-                      'editor': 'admin'}, id=1)
+                      'payload': {}, 'phone': '19865875737', 'email': '2256807897@qq.com', 'creator': superUser,
+                      'editor': superUser}, id=1)
 
         resultArgs = []
         resultArgs.append(celeryextend.id)
@@ -178,18 +177,8 @@ class CheckAuthUserAPIView(APIView):
     permission_classes = ()
 
     def get(self, request, *args, **kwargs):
-        print(request.user)
-        print(type(request.user))
-        if type(request.user) == dict:
-            username = request.user["username"]
-        else:
-            username = request.user.username
-        currentUser = User.objects.filter(username=username).first()
-        username = "游客身份"
-        if currentUser and currentUser.username:
-            username = currentUser.username
         return APIResponseResult.APIResponse(0, 'ok', results={
-            "username": username
+            "username": request.user["username"]
             , "sex": "男"
             , "role": 1,
         })
@@ -212,6 +201,8 @@ def get_child_menu(childs):
 class MenuViewSet(CustomViewBase):
     queryset = models.Menu.objects.all().order_by('sort')
     serializer_class = modelSerializers.MenuSerializer
+    filter_class = modelFilters.MenuFilter
+    ordering_fields = ('id',)  # 排序
 
     # 返回菜单上下级关系
     @action(methods=['get', 'post'], detail=False, url_path='parent_menu')
@@ -232,12 +223,9 @@ class MenuViewSet(CustomViewBase):
     @action(methods=['get', 'post'], detail=False, url_path='left_menu')
     def left_menu(self, request, *args, **kwargs):
         # 获得用户权限
-        if type(request.user) == dict:
-            username = request.user["username"]
-        else:
-            username = request.user.username
+        user_id = request.user["user_id"]
         tree = []
-        currentUser = User.objects.filter(username=username).first()
+        currentUser = User.objects.filter(id=user_id).first()
         if currentUser.is_superuser:
             firstmenus = models.Menu.objects.filter(parent=None).order_by('sort')
         else:
@@ -278,11 +266,15 @@ class ContentTypeViewSet(CustomViewBase):
 class PermissionViewSet(CustomViewBase):
     queryset = Permission.objects.all().order_by('id')
     serializer_class = modelSerializers.PermissionSerializer
+    filter_class = modelFilters.PermissionFilter
+    ordering_fields = ('id',)  # 排序
 
 
 class GroupViewSet(CustomViewBase):
     queryset = Group.objects.all().order_by('id')
     serializer_class = modelSerializers.GroupSerializer
+    filter_class = modelFilters.GroupFilter
+    ordering_fields = ('id',)  # 排序
 
 
 class UserViewSet(CustomViewBase):
@@ -295,11 +287,8 @@ class UserViewSet(CustomViewBase):
     @action(methods=['put'], detail=False, url_path='resetPassWord')
     def resetPassWord(self, request, *args, **kwargs):
         oldPassword = request.data.get("oldPassword", None)
-        if type(request.user) == dict:
-            username = request.user["username"]
-        else:
-            username = request.user.username
-        currentUser = User.objects.filter(username=username).first()
+        user_id = request.user["user_id"]
+        currentUser = User.objects.filter(id=user_id).first()
         if not currentUser.check_password(oldPassword):
             return APIResponseResult.APIResponse(-1, '当前密码输入错误')
         password = request.data.get("password", None)
@@ -310,11 +299,6 @@ class UserViewSet(CustomViewBase):
         currentUser.password = make_password(password)
         currentUser.save()
         return APIResponseResult.APIResponse(0, '修改成功')
-
-    # 修改用户信息
-    @action(methods=['put'], detail=False, url_path='resetUserInfo')
-    def resetUserInfo(self, request, *args, **kwargs):
-        pass
 
 
 class PeriodicTaskViewSet(CustomViewBase):
@@ -356,22 +340,34 @@ class userInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.G
             username = request.user["username"]
         else:
             username = request.user.username
+        user_id = request.user["user_id"]
         currentUser = User.objects.filter(username=username).first()
-        obj = models.userInfo.objects.filter(creator=username).first()
-        if obj is None:
-            obj, created = models.userInfo.objects.update_or_create(
-                defaults={"user": currentUser, "nickName": currentUser.get_full_name(), "email": currentUser.email,
-                          'creator': currentUser.username, 'editor': currentUser.username},
-                user=currentUser)
+        obj, created = models.userInfo.objects.update_or_create(
+            defaults={"user": currentUser,
+                      'creator': currentUser, 'editor': currentUser},
+            user=currentUser)
 
         results = {}
         results.update({"id": obj.id})
         results.update({"nickName": obj.nickName})
         results.update({"sex": obj.sex})
-        results.update({"avatar": obj.avatar.name})
+        results.update({"avatar": obj.avatar.name})  # 需要构建文件服务器
         results.update({"phone": obj.phone})
         results.update({"email": obj.email})
         results.update({"desc": obj.desc})
-        results.update({"roles": [{}]})
+        results.update({"roles": [{}]})  # 拥有的权限
         results.update({"username": username})
         return APIResponseResult.APIResponse(0, 'success', results=results, http_status=status.HTTP_200_OK, )
+
+    # 用户上传头像 从nginx 目录映射
+    @action(methods=['post'], detail=False, url_path='uploadAvatar')
+    def uploadAvatar(self, request, *args, **kwargs):
+
+        files = request.FILES.getlist('images', [])
+        if len(files):
+            user_id = request.user["user_id"]
+            uinfo, ctime = models.userInfo.objects.update_or_create(defaults={"avatar": files[0]}, user_id=user_id)
+            return APIResponseResult.APIResponse(0, 'success', results={"avatar": uinfo.avatar.name},
+                                                 http_status=status.HTTP_200_OK, )
+
+        return APIResponseResult.APIResponse(-1, '上传失败', http_status=status.HTTP_500_INTERNAL_SERVER_ERROR, )

@@ -39,7 +39,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
 
     # 新增任务
     def create(self, validated_data):
-        username = self.context["request"].user["username"]
+        user_id = self.context["request"].user["user_id"]
         name = str(self.initial_data.get("name", "")).strip()
         tasktype = str(self.initial_data.get("tasktype", "")).strip()
         task = str(self.initial_data.get("task", "")).strip()
@@ -78,8 +78,8 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
                                                               reqmethod=reqmethod,
                                                               reqheaders=reqheaders,
                                                               payload=payload, phone=phone, email=email,
-                                                              creator=username,
-                                                              editor=username)
+                                                              creator_id=user_id,
+                                                              editor_id=user_id)
             if tasktype == "1":
                 resultArgs = []
                 resultArgs.append(celeryextend.id)
@@ -91,7 +91,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
 
     # 修改任务
     def update(self, instance, validated_data):
-        username = self.context["request"].user["username"]
+        user_id = self.context["request"].user["user_id"]
         intervalType = str(self.initial_data.get("intervalType", "")).strip()
         url = str(self.initial_data.get("url", "")).strip()
         # 不知道为何选择Get 获取到的数据 前面会有\b
@@ -121,7 +121,7 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
                 celeryextend.payload = payload
                 celeryextend.phone = phone
                 celeryextend.email = email
-                celeryextend.editor = username
+                celeryextend.editor.id = user_id
                 celeryextend.save()
             # 修改计划任务
             validated_data["enabled"] = True
@@ -176,7 +176,7 @@ class UserSerializer(serializers.ModelSerializer):
     extuserinfo = serializers.SerializerMethodField()
 
     def get_extuserinfo(self, obj):
-        return models.userInfo.objects.filter(creator=obj.username).values("phone", "desc").first()
+        return models.userInfo.objects.filter(creator=obj).values("phone", "desc").first()
 
     def create(self, validated_data):
         if "is_staff" in validated_data:
@@ -202,7 +202,7 @@ class UserSerializer(serializers.ModelSerializer):
         desc = self.initial_data["desc"]
         models.userInfo.objects.update_or_create(
             defaults={"user": cuser, "nickName": cuser.get_full_name(), "phone": phone, "email": cuser.email,
-                      "desc": desc, 'creator': cuser.username, 'editor': cuser.username},
+                      "desc": desc, 'creator': cuser, 'editor': cuser},
             user=cuser)
 
         return cuser
@@ -232,7 +232,8 @@ class UserSerializer(serializers.ModelSerializer):
         phone = self.initial_data["phone"]
         desc = self.initial_data["desc"]
         models.userInfo.objects.update_or_create(
-            defaults={"nickName": instance.get_full_name(), "phone": phone, "email": instance.email, "desc": desc, 'editor': instance.username},
+            defaults={"nickName": instance.get_full_name(), "phone": phone, "email": instance.email, "desc": desc,
+                      'editor': instance},
             user=instance)
         return obj
 
@@ -292,8 +293,8 @@ class MenuSerializer(serializers.ModelSerializer):
         return "-".join(title_list)
 
     def create(self, validated_data):
-        username = self.context["request"].user["username"]
-        validated_data.update({"creator": username, "editor": username})
+        user_id = self.context["request"].user["user_id"]
+        validated_data.update({"creator_id": user_id, "editor_id": user_id})
         if "parent" in self.initial_data and self.initial_data["parent"]:
             validated_data.update({"parent_id": int(self.initial_data["parent"])})
         objmenu = models.Menu.objects.create(**validated_data)
@@ -369,5 +370,22 @@ class PermissionSerializer(serializers.ModelSerializer):
 class userInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.userInfo
-        fields = ["openid", "get_username", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime", "lastTime",
-                  "creator","editor"]
+        fields = ["openid", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime",
+                  "lastTime", ]
+
+
+# 用户信息导出
+
+class userInfoExportSerializer(serializers.ModelSerializer):
+    # choices字段
+    # degree = serializers.CharField(source='get_degree_display')
+    # ForeignKey字段
+    username = serializers.CharField(source='user.username')
+    cusername = serializers.CharField(source='creator.username')
+    eusername = serializers.CharField(source='editor.username')
+
+    class Meta:
+        model = models.userInfo
+        fields = ["openid", "username", "nickName", "sex", "avatar", "phone", "email", "desc", "createTime",
+                  "lastTime",
+                  "cusername", "eusername"]

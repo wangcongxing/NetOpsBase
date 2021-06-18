@@ -74,7 +74,7 @@ class periodicTaskExport(XLSXFileMixin, ReadOnlyModelViewSet):
 # 导出用户信息
 class userInfoExport(XLSXFileMixin, ReadOnlyModelViewSet):
     queryset = models.userInfo.objects.all().order_by('-id')
-    serializer_class = modelSerializers.userInfoSerializer
+    serializer_class = modelSerializers.userInfoExportSerializer
     renderer_classes = (XLSXRenderer,)
     filename = '{}.xlsx'.format(str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
     column_header = {

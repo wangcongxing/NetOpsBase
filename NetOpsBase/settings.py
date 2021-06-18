@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-import datetime
+import datetime,os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -155,6 +155,8 @@ USE_L10N = True  # 默认False，以本地化格式显示数字和时间
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/' # nas 盘位置
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 wwopeninit = {
     "suite_id": "ww2204b8d0daa1fb88",
