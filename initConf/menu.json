@@ -108,7 +108,7 @@
     "name": "MonitoringAlarm",
     "title": "监控报警",
     "icon": "layui-icon-fire",
-    "jump": "system/about",
+    "jump": "",
     "sort": 10,
     "list": [
       {

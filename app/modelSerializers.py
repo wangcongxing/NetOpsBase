@@ -334,7 +334,7 @@ class MenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Menu
         fields = ["id", "title", "url", "sort", "icon", "parent", "parentmenu", "group", "permission", "desc",
-                  "creator", "createTime"]
+                  "cusername", "createTime"]
         depth = 1
 
 

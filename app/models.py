@@ -46,6 +46,9 @@ class Menu(MPTTModel):
     editor = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="修改者",
                                related_name="menu_editor")
 
+    def cusername(self):
+        return self.creator.username
+
     def __str__(self):  # 循环查找父菜单返回字符串 self-parent-parent
         return self.title
 
