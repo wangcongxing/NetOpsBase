@@ -136,6 +136,12 @@
         "title": "脚本生成器",
         "jump": "omt/builderCMD",
         "sort": 1
+      },
+      {
+        "name": "WebShell",
+        "title": "WebShell",
+        "jump": "omt/webshell",
+        "sort": 2
       }
     ]
   },

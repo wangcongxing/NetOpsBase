@@ -166,7 +166,7 @@ USE_L10N = True  # 默认False，以本地化格式显示数字和时间
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-MEDIA_URL = '/media/' # nas 盘位置
+MEDIA_URL = '/Users/congxingwang/pythoncode/NetOpsBase/media/' # 生产环境为nas 盘位置
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 wwopeninit = {
