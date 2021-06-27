@@ -26,12 +26,23 @@
     ]
   },
   {
-    "name": "configurationManagement",
+    "name": "NetOpsNornir",
     "title": "配置管理",
     "icon": "layui-icon-component",
     "sort": 2,
-    "jump": "configurationManagement/list",
     "list": [
+      {
+        "name": "deviceTypes",
+        "title": "设备类型",
+        "jump": "NetOpsNornir/deviceTypes",
+        "sort": 1
+      },
+      {
+        "name": "textFsmTemplates",
+        "title": "自动巡检",
+        "jump": "NetOpsNornir/textFsmTemplates",
+        "sort": 2
+      }
     ]
   },
   {
@@ -41,6 +52,18 @@
     "sort": 3,
     "jump": "networkAudit/list",
     "list": [
+      {
+        "name": "syslogs",
+        "title": "日志分析",
+        "jump": "networkAudit/syslogs",
+        "sort": 1
+      },
+      {
+        "name": "changeConf",
+        "title": "变更查询",
+        "jump": "networkAudit/changeConf",
+        "sort": 1
+      }
     ]
   },
   {
@@ -54,6 +77,12 @@
         "title": "网络拓扑",
         "jump": "networkDetection/NetworkTopology",
         "sort": 1
+      },
+      {
+        "name": "NetworkFlowChart",
+        "title": "网络流量",
+        "jump": "networkDetection/NetworkFlowChart",
+        "sort": 1
       }
     ]
   },
@@ -62,8 +91,19 @@
     "title": "资产管理",
     "icon": "layui-icon-app",
     "sort": 5,
-    "jump": "assetManagement/networkAssets",
     "list": [
+      {
+        "name": "networkAssets",
+        "title": "网络设备",
+        "jump": "assetManagement/networkAssets",
+        "sort": 1
+      },
+      {
+        "name": "onlineTerminal",
+        "title": "在线终端",
+        "jump": "assetManagement/onlineTerminal",
+        "sort": 1
+      }
     ]
   },
   {
@@ -82,6 +122,12 @@
     "sort": 7,
     "jump": "taskScheduling/list",
     "list": [
+      {
+        "name": "nornirTaskList",
+        "title": "任务列表",
+        "jump": "NetOpsNornir/taskList",
+        "sort": 1
+      }
     ]
   },
   {
@@ -142,6 +188,12 @@
         "title": "WebShell",
         "jump": "omt/webshell",
         "sort": 2
+      },
+      {
+        "name": "TextFSM",
+        "title": "TextFSM",
+        "jump": "omt/TextFSM",
+        "sort": 3
       }
     ]
   },

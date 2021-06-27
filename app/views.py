@@ -46,6 +46,43 @@ else:
     from NetOpsBase import settings as config
 
 
+# 递归设置菜单节点
+def set_child_menu(pm, citem, superUser):
+    '''
+    :param 节点父类:
+    :param 当前节点:
+    :param 创建者:
+    :return 无返回:
+    '''
+    clist = citem["list"] if "list" in citem.keys() else []
+    for sitem in clist:
+        cname = sitem["name"]
+        ctitle = sitem["title"]
+        cjump = sitem["jump"] if "jump" in sitem.keys() else ""
+        csort = sitem["sort"]
+        cm, cc = models.Menu.objects.update_or_create(
+            defaults={"name": cname, "title": ctitle, "parent": pm, "url": cjump, "sort": csort,
+                      'creator': superUser, 'editor': superUser},
+            name=cname)
+        set_child_menu(cm, sitem, superUser)
+
+
+def get_child_menu(childs):
+    '''
+    :param 当前节点:
+    :return [{"id": child.id, "title": child.title, "children": []}]:
+    '''
+    children = []
+    if childs:
+        for child in childs:
+            data = {"name": child.name, "title": child.title, "icon": child.icon, "jump": child.url, "list": []}
+            _childs = models.Menu.objects.filter(parent=child)
+            if _childs:
+                data["list"] = get_child_menu(_childs)
+            children.append(data)
+    return children
+
+
 # 默认数据初始化
 class opsBaseInitDB(APIView):
     authentication_classes = ()
@@ -68,32 +105,13 @@ class opsBaseInitDB(APIView):
             picon = pitem["icon"]
             psort = pitem["sort"]
             jump = pitem["jump"] if "jump" in pitem.keys() else ""
-
-            plist = pitem["list"] if "list" in pitem.keys() else []
             pm, pc = models.Menu.objects.update_or_create(
                 defaults={"name": pname, "title": ptitle, "icon": picon, "sort": psort, "url": jump,
                           'creator': superUser,
                           'editor': superUser},
                 name=pname)
-            for citem in plist:
-                cname = citem["name"]
-                ctitle = citem["title"]
-                cjump = citem["jump"] if "jump" in citem.keys() else ""
-                clist = citem["list"] if "list" in citem.keys() else []
-                csort = citem["sort"]
-                cm, cc = models.Menu.objects.update_or_create(
-                    defaults={"name": cname, "title": ctitle, "parent": pm, "url": cjump, "sort": csort,
-                              'creator': superUser, 'editor': superUser},
-                    name=cname)
-                for ccitem in clist:
-                    ccname = ccitem["name"]
-                    cctitle = ccitem["title"]
-                    ccjump = ccitem["jump"]
-                    ccsort = ccitem["sort"]
-                    ccm, cc = models.Menu.objects.update_or_create(
-                        defaults={"name": ccname, "title": cctitle, "parent": cm, "url": ccjump, "sort": ccsort,
-                                  'creator': superUser, 'editor': superUser},
-                        name=ccname)
+            # 新建定级菜单
+            set_child_menu(pm, pitem, superUser)
 
         # 权限组
         permissionGroup = ["超级管理员", "管理员", "纠错员", "采购员", "运营人员", "编辑员", "安全员", "网络组", "巡检员", "监控组", ]
@@ -185,17 +203,6 @@ class CheckAuthUserAPIView(APIView):
 
 
 # 系统左侧菜单管理
-
-def get_child_menu(childs):
-    children = []
-    if childs:
-        for child in childs:
-            data = {"name": child.name, "title": child.title, "icon": child.icon, "jump": child.url, "list": []}
-            _childs = models.Menu.objects.filter(parent=child)
-            if _childs:
-                data["list"] = get_child_menu(_childs)
-            children.append(data)
-    return children
 
 
 class MenuViewSet(CustomViewBase):
