@@ -16,12 +16,6 @@
         "title": "主页一",
         "jump": "home/homepage1",
         "sort": 2
-      },
-      {
-        "name": "homepage2",
-        "title": "主页二",
-        "jump": "home/homepage2",
-        "sort": 3
       }
     ]
   },
