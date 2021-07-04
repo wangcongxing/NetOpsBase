@@ -20,7 +20,7 @@
     ]
   },
   {
-    "name": "NetOpsNornir",
+    "name": "cmdb",
     "title": "配置管理",
     "icon": "layui-icon-component",
     "sort": 2,
@@ -33,7 +33,7 @@
       },
       {
         "name": "textFsmTemplates",
-        "title": "自动巡检",
+        "title": "脚本配置",
         "jump": "NetOpsNornir/textFsmTemplates",
         "sort": 2
       }
@@ -56,7 +56,7 @@
         "name": "changeConf",
         "title": "变更查询",
         "jump": "networkAudit/changeConf",
-        "sort": 1
+        "sort": 2
       }
     ]
   },
@@ -76,7 +76,7 @@
         "name": "NetworkFlowChart",
         "title": "网络流量",
         "jump": "networkDetection/NetworkFlowChart",
-        "sort": 1
+        "sort": 2
       }
     ]
   },
@@ -96,7 +96,33 @@
         "name": "onlineTerminal",
         "title": "在线终端",
         "jump": "assetManagement/onlineTerminal",
+        "sort": 2
+      }
+    ]
+  },
+  {
+    "name": "workorder",
+    "title": "工单系统",
+    "icon": "layui-icon-survey",
+    "sort": 5,
+    "list": [
+      {
+        "name": "upcoming",
+        "title": "我的待办",
+        "jump": "workorder/upcoming",
         "sort": 1
+      },
+      {
+        "name": "alreadyDone",
+        "title": "我的已办",
+        "jump": "workorder/alreadydone",
+        "sort": 2
+      },
+      {
+        "name": "alreadyEnd",
+        "title": "我的归档",
+        "jump": "workorder/alreadyend",
+        "sort": 2
       }
     ]
   },
@@ -107,6 +133,18 @@
     "sort": 6,
     "jump": "busMan/list",
     "list": [
+      {
+        "name": "busManAutoCheck",
+        "title": "自动巡检",
+        "jump": "busMan/busManAutoCheck",
+        "sort": 1
+      },
+      {
+        "name": "busManApp",
+        "title": "应用管理",
+        "jump": "busMan/busManApp",
+        "sort": 1
+      }
     ]
   },
   {
@@ -114,12 +152,11 @@
     "title": "任务编排",
     "icon": "layui-icon-read",
     "sort": 7,
-    "jump": "taskScheduling/list",
     "list": [
       {
-        "name": "nornirTaskList",
+        "name": "taskSchedulList",
         "title": "任务列表",
-        "jump": "NetOpsNornir/taskList",
+        "jump": "taskScheduling/taskList",
         "sort": 1
       }
     ]
