@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-import datetime,os
+import datetime, os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -166,7 +166,7 @@ USE_L10N = True  # 默认False，以本地化格式显示数字和时间
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-MEDIA_URL = '/Users/congxingwang/pythoncode/NetOpsBase/media/' # 生产环境为nas 盘位置
+MEDIA_URL = '/Users/congxingwang/pythoncode/NetOpsBase/media/'  # 生产环境为nas 盘位置
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 wwopeninit = {
@@ -174,12 +174,28 @@ wwopeninit = {
     "suite_secret": "Oc0bzP95I36tjbIzy7JraJStRWWJ43evD3WFFHKgZWQ",
 }
 
+# redis配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100}
+            # "PASSWORD": "密码",
+        }
+    }
+}
+REDIS_TIMEOUT = 7 * 24 * 60 * 60
+CUBES_REDIS_TIMEOUT = 60 * 60
+NEVER_REDIS_TIMEOUT = 365 * 24 * 60 * 60
+
 # REST_FRAMEWORK JWT 验证
 REST_FRAMEWORK = {
     # 设置所有接口都需要被验证
     'DEFAULT_PERMISSION_CLASSES': (
-        #'rest_framework.permissions.IsAuthenticated',  #建议是特定接口特定认证
-        #'rest_framework.permissions.AllowAny',
+        # 'rest_framework.permissions.IsAuthenticated',  #建议是特定接口特定认证
+        # 'rest_framework.permissions.AllowAny',
     ),
     # 分页配置
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',

@@ -45,7 +45,9 @@ class PeriodicTaskSerializer(serializers.ModelSerializer):
         task = str(self.initial_data.get("task", "")).strip()
         intervalType = str(self.initial_data.get("intervalType", "")).strip()
         args = str(self.initial_data.get("args", [])).strip()
+        args = [] if args == '' else args
         kwargs = str(self.initial_data.get("kwargs", [])).strip()
+        kwargs = {} if kwargs == '' else kwargs
         url = str(self.initial_data.get("url", "")).strip()
         # 不知道为何选择Get 获取到的数据 前面会有\b
         reqmethod = str(self.initial_data.get("reqmethod", "")).replace("\b", "").strip()

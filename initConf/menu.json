@@ -143,7 +143,13 @@
         "name": "busManApp",
         "title": "应用管理",
         "jump": "busMan/busManApp",
-        "sort": 1
+        "sort": 2
+      },
+      {
+        "name": "busManWork",
+        "title": "工作日历",
+        "jump": "busMan/busManWork",
+        "sort": 3
       }
     ]
   },
@@ -225,6 +231,18 @@
         "title": "TextFSM",
         "jump": "omt/TextFSM",
         "sort": 3
+      },
+      {
+        "name": "nettemp",
+        "title": "场景模版",
+        "jump": "omt/nettemp",
+        "sort": 4
+      },
+      {
+        "name": "netmaintain",
+        "title": "日常维护",
+        "jump": "omt/netmaintain",
+        "sort": 4
       }
     ]
   },
@@ -311,6 +329,12 @@
             "title": "修改密码",
             "jump": "set/user/password",
             "sort": 2
+          },
+          {
+            "name": "personalAccessTokens",
+            "title": "访问令牌",
+            "jump": "set/user/AccessTokens",
+            "sort": 3
           }
         ]
       }
