@@ -330,6 +330,10 @@ class MenuSerializer(serializers.ModelSerializer):
         groupinfo = filter(None, str(ginfo).split(','))
         for p in groupinfo:
             instance.group.add(Group.objects.filter(id=int(p)).first())
+
+        if self.initial_data["parent"]:
+            validated_data.update({"parent_id": int(self.initial_data["parent"])})
+
         obj = super().update(instance, validated_data)
         return obj
 
