@@ -28,13 +28,18 @@
       {
         "name": "deviceTypes",
         "title": "设备类型",
-        "jump": "NetOpsNornir/deviceTypes",
+        "jump": "cmdb/deviceTypes",
+        "sort": 1
+      }, {
+        "name": "baseconf",
+        "title": "基础配置",
+        "jump": "cmdb/baseconf",
         "sort": 1
       },
       {
         "name": "textFsmTemplates",
         "title": "脚本配置",
-        "jump": "NetOpsNornir/textFsmTemplates",
+        "jump": "cmdb/cmdConfig",
         "sort": 2
       }
     ]
@@ -154,16 +159,16 @@
     ]
   },
   {
-    "name": "taskScheduling",
-    "title": "任务编排",
+    "name": "tempManage",
+    "title": "模版管理",
     "icon": "layui-icon-read",
     "sort": 7,
     "list": [
-      {
-        "name": "taskSchedulList",
-        "title": "任务列表",
-        "jump": "taskScheduling/taskList",
-        "sort": 1
+   {
+        "name": "nettemp",
+        "title": "常用模版",
+        "jump": "tempManage/nettemp",
+        "sort": 3
       }
     ]
   },
@@ -210,7 +215,7 @@
   },
   {
     "name": "omt",
-    "title": "运维工具",
+    "title": "工具箱",
     "icon": "layui-icon-util",
     "sort": 11,
     "list": [
@@ -233,16 +238,16 @@
         "sort": 3
       },
       {
-        "name": "nettemp",
-        "title": "场景模版",
-        "jump": "omt/nettemp",
+        "name": "networkinfo",
+        "title": "数据采集",
+        "jump": "omt/readTaskList",
         "sort": 4
       },
       {
         "name": "netmaintain",
-        "title": "日常维护",
+        "title": "批量维护",
         "jump": "omt/netmaintain",
-        "sort": 4
+        "sort": 5
       }
     ]
   },
